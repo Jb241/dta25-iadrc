@@ -1,0 +1,2823 @@
+
+**# Bookmark #6
+********************************************************************************
+********************************************************************************
+****** Multiple Imputation
+********************************************************************************
+********************************************************************************	
+use "iadc-long_2025.dta", clear
+set seed 23414
+
+drop if cci_tot < 20
+drop if gds15 > 15 & gds15 !=. // people with "88" as value ??
+drop if female == . // this is one person with only 1 wave
+
+sum id
+codebook id
+
+misstable summarize gds15 MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd ///
+	time_centered_sd age_base_sd faq_sd female white grade_sd married ///
+	relsubj_simple mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+	days_since_last 
+	/// bmi_sd
+
+* MICE set up
+mi set wide
+mi register imputed cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+	L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_MCIdem_iadc ///
+	/// bmi_sd ///
+	married ///
+	gds15 L_gds15 ///
+	reydecorab_sd craftdre_sd trailbtime_sd ///
+	L_reydecorab_sd L_craftdre_sd L_trailbtime_sd ///
+	mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+	L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+	/// pastdep ///
+	memwors_bi L_memwors_bi yrs_since_last relsubj_simple
+mi register regular time_centered_sd age_base_sd faq_sd female white grade_sd
+
+* Dry run	
+mi impute chained /// (regress, omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+					///	L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd ///
+					///	L_visitors_f_sd L_famfriends_f_sd i.L_memwors_bi)) bmi_sd ///
+	/// (logit, augment omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		///	L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		///	i.L_memwors_bi)) pastdep ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) married yrs_since_last relsubj_simple ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) gds15 ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd mocatots_sd ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_gds15 ///
+	(logit, augment omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_MCIdem_iadc ///	
+	(logit, omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		)) memwors_bi ///
+	(logit, omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		)) L_memwors_bi ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) mocatots_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_mocatots_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) cci_tot_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_cci_tot_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) cci_inftot_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_cci_inftot_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) trailbtime_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_trailbtime_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) craftdre_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_craftdre_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) reydecorab_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_reydecorab_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) mastery1_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_mastery1_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) mastery2_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_mastery2_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) visitors_f_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd famfriends_f_sd ///
+		i.memwors_bi)) L_visitors_f_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd ///
+		i.L_memwors_bi)) famfriends_f_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd ///
+		i.memwors_bi)) L_famfriends_f_sd ///
+	(logit, augment omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) MCIdem_iadc ///
+	= time_centered_sd age_base_sd faq_sd female white grade_sd, rseed(23414) dryrun
+	
+* Real initial imputation step
+mi impute chained /// (regress, omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+					///	L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd ///
+					///	L_visitors_f_sd L_famfriends_f_sd i.L_memwors_bi)) bmi_sd ///
+	/// (logit, augment omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		///	L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		///	i.L_memwors_bi)) pastdep ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) married yrs_since_last relsubj_simple ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) gds15 ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd mocatots_sd ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_gds15 ///
+	(logit, omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		)) memwors_bi ///
+	(logit, omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		)) L_memwors_bi ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) mocatots_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_mocatots_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) cci_tot_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_cci_tot_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) cci_inftot_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_cci_inftot_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) trailbtime_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_trailbtime_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) craftdre_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_craftdre_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) reydecorab_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_reydecorab_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) mastery1_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_mastery1_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) mastery2_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_mastery2_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) visitors_f_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd famfriends_f_sd ///
+		i.memwors_bi)) L_visitors_f_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd ///
+		i.L_memwors_bi)) famfriends_f_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd ///
+		i.memwors_bi)) L_famfriends_f_sd ///
+	(logit, augment omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_MCIdem_iadc ///	
+	(logit, augment omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) MCIdem_iadc ///
+	= time_centered_sd age_base_sd faq_sd female white grade_sd, rseed(23414) add(20) force
+
+save "mi20_iadc-long_2025.dta", replace
+
+*****
+/* How many imputations
+preserve 
+drop if yrs_since_last > 2.5
+qui mi estimate, cmdok: menbreg gds15_filled2 ///
+	L.cci_tot_sd L.cci_inftot_sd L.mocatots_sd L.MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married ///
+    || id:, irr iterate(200) intpoints(12)
+
+* Run how_many_imputations
+how_many_imputations, cv_se(.05)
+restore
+
+* Add
+mi impute chained (regress, omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15_filled2 ///
+						L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd ///
+						L_visitors_f_sd L_famfriends_f_sd i.L_memwors_bi i.L_memoryinf)) bmi_sd ///
+	(logit, omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) female white pastdep ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) married grade_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) gds15_filled2 ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd mocatots_sd ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_gds15_filled2 ///
+	(logit, augment omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) MCIdem_iadc ///
+	(logit, augment omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_MCIdem_iadc ///	
+	(logit, omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi)) memoryinf ///
+	(logit, omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi)) L_memoryinf ///
+	(logit, omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memoryinf)) memwors_bi ///
+	(logit, omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memoryinf)) L_memwors_bi ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) mocatots_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_mocatots_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) cci_tot_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_cci_tot_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) cci_inftot_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_cci_inftot_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) trailbtime_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15_filled2 ///
+		craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_trailbtime_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) craftdre_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_craftdre_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) reydecorab_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_reydecorab_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) mastery1_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_mastery1_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_visitors_f_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) mastery2_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd visitors_f_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_mastery2_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_famfriends_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) visitors_f_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd famfriends_f_sd ///
+		i.memwors_bi i.memoryinf)) L_visitors_f_sd ///
+	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15_filled2 ///
+		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd ///
+		i.L_memwors_bi i.L_memoryinf)) famfriends_f_sd ///
+	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15_filled2 ///
+		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd ///
+		i.memwors_bi i.memoryinf)) L_famfriends_f_sd ///
+	= time_centered_sd age_base_sd faq_sd, rseed(23414) add(81)
+
+save "mi_iadc-long.dta", replace
+*/
+
+***********************
+* Passive Recodes
+
+* Unstandardize variables
+use "iadc-long_2025.dta", clear
+set seed 23414
+
+drop if cci_tot < 20
+drop if gds15 > 15 & gds15 !=.
+drop if female == . 
+
+* Define locals with original means and SDs
+local vars_to_unstandardize cci_tot cci_inftot mocatots ///
+	/// bmi ///
+	reydecorab ///
+    craftdre trailbtime mastery1 mastery2 visitors_f famfriends_f ///
+    time_centered age_base faq grade
+
+* Loop through and store means and SDs
+foreach var of local vars_to_unstandardize {
+    qui sum `var'
+    local `var'_mean = r(mean)
+    local `var'_sd = r(sd)
+}
+
+use "mi20_iadc-long_2025.dta", clear // switch to "mi_iadc-long.dta" for final analysis
+
+qui mi xeq: drop L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_reydecorab_sd L_craftdre_sd L_trailbtime_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd L_mocatots_sd L2_MCIdem_iadc L2_cci_inftot_sd L2_cci_tot_sd L2_mocatots_sd L_gds15 L2_gds15 dep15_f2 L_memwors_bi cci_tot_bi cci_inftot_bi mocatots_bi craftdre_bi reydecorab_bi trailbtime_bi L_cci_tot_bi L_cci_inftot_bi L_mocatots_bi L_craftdre_bi L_reydecorab_bi L_trailbtime_bi cci_inftot L_cci_inftot cci_tot L_cci_tot yrs_since_last cci_mean_sd cci_within_sd L_cci_within_sd L_cci_within cci_mean cci_within L_cci_within gds15_mean gds15_within L_gds15_within gds15_sd gds15_mean_sd gds15_within_sd L_gds15_within_sd mocatots ///
+	///bmi ///
+	reydecorab craftdre trailbtime mastery1 mastery2 visitors_f famfriends_f time_centered age_base faq grade
+
+mi xtset id wave
+
+* Create years since last
+gen yrs_since_last = days_since_last / 365.25
+
+* Passively unstandardize variables in the imputed datasets
+qui mi passive: gen cci_tot = cci_tot_sd * `cci_tot_sd' + `cci_tot_mean'
+qui mi passive: gen cci_inftot = cci_inftot_sd * `cci_inftot_sd' + `cci_inftot_mean'
+qui mi passive: gen mocatots = mocatots_sd * `mocatots_sd' + `mocatots_mean'
+*mi passive: gen bmi = bmi_sd * `bmi_sd' + `bmi_mean'
+qui mi passive: gen reydecorab = reydecorab_sd * `reydecorab_sd' + `reydecorab_mean'
+qui mi passive: gen craftdre = craftdre_sd * `craftdre_sd' + `craftdre_mean'
+qui mi passive: gen trailbtime = trailbtime_sd * `trailbtime_sd' + `trailbtime_mean'
+qui mi passive: gen mastery1 = mastery1_sd * `mastery1_sd' + `mastery1_mean'
+qui mi passive: gen mastery2 = mastery2_sd * `mastery2_sd' + `mastery2_mean'
+qui mi passive: gen visitors_f = visitors_f_sd * `visitors_f_sd' + `visitors_f_mean'
+qui mi passive: gen famfriends_f = famfriends_f_sd * `famfriends_f_sd' + `famfriends_f_mean'
+qui mi passive: gen time_centered = time_centered_sd * `time_centered_sd' + `time_centered_mean'
+qui mi passive: gen age_base = age_base_sd * `age_base_sd' + `age_base_mean'
+qui mi passive: gen faq = faq_sd * `faq_sd' + `faq_mean'
+qui mi passive: gen grade = grade_sd * `grade_sd' + `grade_mean'
+
+local cat_to_round mastery1 mastery2 visitors_f famfriends_f
+foreach var of local cat_to_round {
+    mi passive: replace `var' = round(`var')
+}
+
+* well with diagnosis
+qui mi passive: gen mocadiag_off = .
+qui mi passive: replace mocadiag_off = 0 if MCIdem_iadc != . & mocatots !=.
+qui mi passive: replace mocadiag_off = 1 if MCIdem_iadc == 1 & mocatots > 24
+
+* Lagged vars
+mi xtset id wave
+qui mi passive: gen L_MCIdem_iadc = L.MCIdem_iadc
+qui mi passive: gen L_cci_inftot_sd = L.cci_inftot_sd
+qui mi passive: gen L_cci_tot_sd = L.cci_tot_sd
+qui mi passive: gen L_mocatots_sd = L.mocatots_sd
+qui mi passive: gen L_reydecorab_sd = L.reydecorab_sd
+qui mi passive: gen L_craftdre_sd = L.craftdre_sd
+qui mi passive: gen L_trailbtime_sd = L.trailbtime_sd
+qui mi passive: gen L_mastery1_sd = L.mastery1_sd
+qui mi passive: gen L_mastery2_sd = L.mastery2_sd
+qui mi passive: gen L_visitors_f_sd = L.visitors_f_sd
+qui mi passive: gen L_famfriends_f_sd = L.famfriends_f_sd
+qui mi passive: gen L2_MCIdem_iadc = L2.MCIdem_iadc
+qui mi passive: gen L2_cci_inftot_sd = L2.cci_inftot_sd
+qui mi passive: gen L2_cci_tot_sd = L2.cci_tot_sd
+qui mi passive: gen L2_mocatots_sd = L2.mocatots_sd
+qui mi passive: gen L_gds15 = L.gds15
+qui mi passive: gen L2_gds15 = L2.gds15
+qui mi passive: gen L_memwors_bi = L.memwors_bi
+*mi passive: gen L_memoryinf = L.memoryinf
+qui mi passive: gen L_cci_inftot = L.cci_inftot
+qui mi passive: gen L_cci_tot = L.cci_tot
+qui mi passive: gen L_faq_sd = L.faq_sd
+qui mi passive: gen L_mocadiag_off = L.mocadiag_off
+
+* Calculate means and SDs for binary cutoffs from original data
+preserve
+mi extract 0, clear
+local vars_to_bi cci_tot cci_inftot reydecorab ///
+    craftdre trailbtime
+foreach var of local vars_to_bi {
+    qui sum `var'
+    local mean_`var' = r(mean)
+    local sd_`var' = r(sd)
+}
+restore
+
+* Binary vars
+qui mi passive: gen dep15_f2 = (gds15 >= 5)
+
+qui mi passive: gen cci_tot_bi = (cci_tot >= `mean_cci_tot' + `sd_cci_tot')
+label define ccilbl 0 "Normal (<SD above mu)" 1 "Worried (>=SD above mu)"
+label val cci_tot_bi ccilbl
+label var cci_tot_bi "CCI (1=Worried)"
+
+qui mi passive: gen cci_inftot_bi = (cci_inftot >= `mean_cci_inftot' + `sd_cci_inftot')
+label val cci_inftot_bi ccilbl
+label var cci_inftot_bi "CCI Informant (1=Worried)"
+
+qui mi passive: gen mocatots_bi = (mocatots <= 25)
+label define mocalbl 0 "Normal (>25)" 1 "Poor (<=25)"
+label val mocatots_bi mocalbl
+label var mocatots_bi "MoCA (1=Poor)"
+
+qui mi passive: gen craftdre_bi = (craftdre <= `mean_craftdre' - `sd_craftdre')
+label define coglbl 0 "Normal (>SD below mu)" 1 "Poor (<=SD below mu)"
+label val craftdre_bi coglbl
+label var craftdre_bi "Craft Story 21 Delayed Recall (1=Poor)"
+
+qui mi passive: gen reydecorab_bi = (reydecorab <= `mean_reydecorab' - `sd_reydecorab')
+label val reydecorab_bi coglbl
+label var reydecorab_bi "Rey-AVLT (1=Poor)"
+
+qui mi passive: gen trailbtime_bi = (trailbtime >= `mean_trailbtime' + `sd_trailbtime')
+label define traillbl 0 "Normal (<SD above mu)" 1 "Poor (>=SD above mu)"
+label val trailbtime_bi traillbl
+label var trailbtime_bi "Trails-B Time (1=Poor)"
+
+mi xtset id wave
+qui mi passive: gen L_cci_tot_bi = L.cci_tot_bi
+qui mi passive: gen L_cci_inftot_bi = L.cci_inftot_bi
+qui mi passive: gen L_mocatots_bi = L.mocatots_bi
+qui mi passive: gen L_reydecorab_bi = L.reydecorab_bi
+qui mi passive: gen L_trailbtime_bi = L.trailbtime_bi
+qui mi passive: gen L_craftdre_bi = L.craftdre_bi
+
+* Within and between CCI
+qui mi passive: egen cci_mean_sd = mean(cci_tot_sd), by(id)
+qui mi passive: gen cci_within_sd = cci_tot_sd - cci_mean_sd
+qui mi passive: gen L_cci_within_sd = L.cci_within_sd
+qui mi passive: egen cci_mean = mean(cci_tot), by(id)
+qui mi passive: gen cci_within = cci_tot - cci_mean
+qui mi passive: gen L_cci_within = L.cci_within
+
+* Within and between GDS-15
+qui mi passive: egen gds15_sd = std(gds15)
+qui mi passive: egen gds15_mean_sd = mean(gds15_sd), by(id)
+qui mi passive: gen gds15_within_sd = gds15_sd - gds15_mean_sd
+qui mi passive: gen L_gds15_within_sd = L.gds15_within_sd
+qui mi passive: egen gds15_mean = mean(gds15), by(id)
+qui mi passive: gen gds15_within = gds15 - gds15_mean
+qui mi passive: gen L_gds15_within = L.gds15_within
+
+* Within and between diagnosis
+qui mi passive: egen MCIdem_mean = mean(MCIdem_iadc), by(id)
+qui mi passive: gen MCIdem_within = MCIdem_iadc - MCIdem_mean
+qui mi passive: gen L_MCIdem_within = L.MCIdem_within
+
+* Labels
+label var mocatots_sd "MoCA Score (in SD)"
+label var cci_tot "CCI"
+label var cci_inftot "CCI Informant"
+label var L_cci_tot "Lag CCI"
+label var L_cci_inftot "Lag CCI Informant"
+label var L_MCIdem_iadc "Lag Diagnosis (1=MCI/dementia)"
+label var L_gds15 "Lag GDS-15"
+label var L_visitors_f "Lag Freq Receive Visitors"
+label var L_famfriends_f "Lag Freq Visit Family/Friends"
+label var L_craftdre_sd "Lag CRAFT Delayed Recall (in SD)"
+label var L_cci_within "Lag CCI Within"
+label var cci_mean "Person-level CCI Mean"
+label var L_gds15_within "Lag GDS-15 Within"
+label var gds15_mean "Person-level GDS-15 Mean"
+label var L2_MCIdem_iadc "2 lags Diagnosis (1=MCI/dementia)"
+label var L2_gds15  "2 lags GDS-15"
+label var L_memwors_bi "Lag self feel memory getting worse"
+*label var L_memoryinf "Lag informant feel memory getting worse"
+label var L_cci_tot_bi "Lag CCI (1=Worried)"
+label var L_cci_inftot_bi "Lag CCI Informant (1=Worried)"
+label var L_mocatots_bi "Lag MoCA (1=Poor)"
+label var L_craftdre_bi "Lag Craft Story 21 Delayed Recall (1=Poor)"
+label var L_reydecorab_bi "Lag Rey-AVLT (1=Poor)"
+label var L_trailbtime_bi "Lag Trails-B Time (1=Poor)"
+label var L_cci_tot_sd "Lag CCI (in SD)"
+label var L_cci_inftot_sd "Lag CCI Informant (in SD)"
+label var L_visitors_f_sd "Lag Freq Receive Visits (in SD)"
+label var L_famfriends_f_sd "Lag Freq Visit Family/Friends (in SD)"
+label var L_trailbtime_sd "Lag Trails B Time (in SD)"
+label var L_reydecorab_sd "Lag Rey-AVLT (in SD)"
+label var L_craftdre_sd "Lag CRAFT Delayed Recall (in SD)"
+label var L_mocatots_sd "Lag MoCA Score (in SD)"
+label var cci_within_sd "CCI Within (in SD)"
+label var L_cci_within_sd "Lag CCI Within (in SD)"
+label var cci_mean_sd "Person-level CCI Mean (in SD)"
+label var gds15_within_sd "GDS-15 Within (in SD)"
+label var L_gds15_within_sd "Lag GDS-15 Within (in SD)"
+label var gds15_mean_sd "Person-level GDS-15 Mean (in SD)"
+label var L_mastery1_sd "Lag Mastery1: can do anything (in SD)"
+label var L_mastery2_sd "Lag Mastery2: feel helpless dealing with problems (in SD)"
+label var L2_cci_inftot_sd "2 lags CCI Informant (in SD)"
+label var L2_cci_tot_sd "2 lags CCI (in SD)"
+label var L2_mocatots_sd "2 lags MoCA (in SD)"
+label var L_faq_sd "Lagged functional ability (in SD)"
+label var cci_tot "Cognitive Change Index"
+label var cci_inftot "Cognitive Change Index - Informant"
+label var mocatots "MoCA"
+label var MCIdem_iadc "Diagnosis (1=MCI/Dementia)"
+*label var bmi "Body Mass Index"
+label var married "Marital Status (ref=Married)"
+label var gds15 "Geriatric Depression Scale-15"
+label var reydecorab "Rey-AVLT"
+label var craftdre "Craft Story 21 Delayed Recall"
+label var trailbtime "Trail Making Test B Time"
+label var mastery1 "Mastery 1: I can do just about anything I really set my mind to."
+label var mastery2 "Mastery 2: I often feel helpless in dealing with the problems of life."
+label var visitors_f "Frequency Receive Visitors"
+label var famfriends_f "Frequency Visit Family/Friends"
+* label var pastdep "Depression episode(s) >2 yrs ago"
+label var yrs_since_last "Years Since Last Visit"
+label var time_centered "Time Elapsed Since Baseline (Centered)"
+label var age_base "Age at Baseline"
+label var faq "Functional Activities Questionnaire"
+label var grade "Years of Education"
+label var mocadiag_off "Healthy MoCA with Diagnosis"
+label var L_mocadiag_off "Lag Healthy MoCA with Diagnosis"
+label define mocadiaglbl 0 "No" 1 "Yes"
+label val mocadiag_off L_mocadiag_off mocadiaglbl
+save "mi20_iadc-long-recoded_2025.dta", replace
+
+
+
+********************************************************************************
+********************************************************************************
+****** Univariate Descriptives
+********************************************************************************
+********************************************************************************
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == . // this is why we lose years before 1992
+
+* Recodes for univariate  descriptives
+qui mi passive: gen mardum1 = (married==1)
+qui mi passive: gen mardum2 = (married==2)
+qui mi passive: gen mardum3 = (married==3)
+qui mi passive: gen mastdum1 = (mastery1==1)
+qui mi passive: gen mastdum2 = (mastery1==2)
+qui mi passive: gen mastdum3 = (mastery1==3)
+qui mi passive: gen mastdum4 = (mastery1==4)
+qui mi passive: gen mast2dum1 = (mastery2==1)
+qui mi passive: gen mast2dum2 = (mastery2==2)
+qui mi passive: gen mast2dum3 = (mastery2==3)
+qui mi passive: gen mast2dum4 = (mastery2==4)
+qui mi passive: gen famdum0 = (famfriends_f==0)
+qui mi passive: gen famdum1 = (famfriends_f==1)
+qui mi passive: gen famdum2 = (famfriends_f==2)
+qui mi passive: gen famdum3 = (famfriends_f==3)
+qui mi passive: gen famdum4 = (famfriends_f==4)
+qui mi passive: gen famdum5 = (famfriends_f==5)
+qui mi passive: gen visdum0 = (visitors_f==0)
+qui mi passive: gen visdum1 = (visitors_f==1)
+qui mi passive: gen visdum2 = (visitors_f==2)
+qui mi passive: gen visdum3 = (visitors_f==3)
+qui mi passive: gen visdum4 = (visitors_f==4)
+qui mi passive: gen visdum5 = (visitors_f==5)
+qui mi passive: gen reldum0 = (relsubj_simple==1)
+qui mi passive: gen reldum1 = (relsubj_simple==2)
+qui mi passive: gen reldum2 = (relsubj_simple==3)
+qui mi passive: gen reldum3 = (relsubj_simple==4)
+label var mardum1 "Married"
+label var mardum2 "No longer married"
+label var mardum3 "Never married"
+label var mastdum1 "Strongly agree"
+label var mastdum2 "Somewhat agree"
+label var mastdum3 "Somewhat disagree"
+label var mastdum4 "Strongly disagree"
+label var mast2dum1 "Strongly agree"
+label var mast2dum2 "Somewhat agree"
+label var mast2dum3 "Somewhat disagree"
+label var mast2dum4 "Strongly disagree"
+label var famdum0 "Never"
+label var famdum1 "Once a year or less"
+label var famdum2 "Several times a year"
+label var famdum3 "Several times a month"
+label var famdum4 "Several times a week"
+label var famdum5 "Every day or almost every day"
+label var visdum0 "Never"
+label var visdum1 "Once a year or less"
+label var visdum2 "Several times a year"
+label var visdum3 "Several times a month"
+label var visdum4 "Several times a week"
+label var visdum5 "Every day or almost every day"
+label var reldum0 "Spouse or child"
+label var reldum1 "Other relative"
+label var reldum2 "Friend or neighbor"
+label var reldum3 "Paid caretaker"
+
+* Create list of all variables to summarize
+local allvars gds15 MCIdem_iadc cci_tot cci_inftot ///
+	mocatots faq ///
+	female white grade ///
+	mardum1 mardum2 mardum3 ///
+	reldum0 reldum1 reldum2 reldum3 ///
+    age_base time_centered yrs_since_last ///
+	mastdum1 mastdum2 mastdum3 mastdum4 ///
+	mast2dum1 mast2dum2 mast2dum3 mast2dum4 ///
+	visdum0 visdum1 visdum2 visdum3 visdum4 visdum5 ///
+	famdum0 famdum1 famdum2 famdum3 famdum4 famdum5 
+	////// bmi pastdep
+
+* Get sample size from imputed datasets (m=1)
+mi xeq 1: summarize cci_tot
+
+local N = r(N)
+
+* Calculate MI-based means and SDs
+matrix means = J(1, `:word count `allvars'', .)
+matrix sds = J(1, `:word count `allvars'', .)
+
+local i = 1
+foreach var of local allvars {
+    * Get MI estimate of mean and SD using Rubin's rules
+    quietly mi estimate, post: mean `var'
+    matrix means[1, `i'] = _b[`var']
+    
+    * Calculate SD using Andy's formula: SE * sqrt(N)
+    scalar v = e(V)[1,1]
+    local sd = sqrt(v) * sqrt(e(N))
+    matrix sds[1, `i'] = `sd'
+    
+    local i = `i' + 1
+}
+
+* Name the matrix columns
+matrix colnames means = `allvars'
+matrix colnames sds = `allvars'
+
+* Run a simple estimation command to set up e() space
+quietly regress cci_tot cci_inftot
+
+* Clear and post  matrices
+ereturn clear
+ereturn post means
+estadd matrix sds = sds
+
+* Export table using esttab
+esttab using "../Tables/univariate_descriptive_table_2025.rtf", replace ///
+    cells("b(fmt(2) label(Mean/Proportion)) sds(fmt(2) label(SD))") ///
+    label title("Descriptive Statistics with Multiple Imputation") ///
+    nonumbers nomtitles noobs ///
+    addnotes("N = `N'")
+
+display as result "Table saved to: ../Tables/univariate_descriptive_table_2025.rtf"
+display as result "N = `N'"
+
+// More sample info
+
+* number of participants
+mi xeq 1: codebook id
+
+* number of waves
+preserve
+mi extract 1, clear
+bysort id: gen nobs = _N
+tabulate nobs
+restore
+
+* year span
+mi xeq 1: codebook visitdate_s 
+
+
+
+// Cross diagonal counts
+set seed 23414
+scalar rand_m = ceil(runiform() * 20)
+display rand_m
+
+mi xeq 2: tab cci_tot_bi cci_inftot_bi
+mi xeq 2: tab cci_tot_bi MCIdem_iadc
+mi xeq 2: tab cci_tot_bi mocatots_bi
+mi xeq 2: tab cci_inftot_bi MCIdem_iadc
+mi xeq 2: tab cci_inftot_bi mocatots_bi
+mi xeq 2: tab mocatots_bi MCIdem_iadc
+
+**# Bookmark #2
+********************************************************************************
+********************************************************************************
+****** Main Effects
+********************************************************************************
+********************************************************************************
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+
+drop if gds15 == .
+
+mi xtset id wave
+
+* Main Analyses
+mi estimate, cmdok eform post: mepoisson gds15 ///
+    MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd ///
+    || id:, irr iterate(500) intpoints(20) difficult
+est sto mi_main_contemp_red
+
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd faq_sd ///
+	/// bmi_sd ///
+	female white grade_sd ///
+	age_base_sd time_centered_sd ///
+	i.married i.relsubj_simple ///
+    || id:, irr iterate(200) intpoints(12)
+est sto mi_main_contemp_full
+	* AMEs
+est restore mi_main_contemp_full
+mimrgns, dydx(cci_tot_sd) predict(mu)
+mimrgns, dydx(MCIdem_iadc) predict(mu)
+
+preserve
+mi xtset id wave
+save "mi20_iadc-long-recoded_temp.dta", replace
+mi convert flong
+qui mi estimate: regress gds15 ///
+	i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd
+mivif
+qui mi estimate: regress gds15 ///
+	i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+	i.relsubj_simple
+mivif
+restore 
+	
+/* standardized DV AME
+mimrgns, dydx(cci_tot_sd) predict(mu)
+scalar marginal_effect = _b[L_cci_tot_sd]
+preserve
+use "iadc-long_2025.dta", clear
+qui sum gds15_filled2
+scalar gds15_mean = r(mean)
+scalar gds15_sd = r(sd)
+display "Outcome (Depression) Mean: " gds15_mean
+display "Outcome (Depression) SD: " gds15_sd
+restore
+scalar std_effect = marginal_effect / gds15_sd
+display std_effect
+*/
+
+* plot
+mi xeq: sum cci_tot_sd, d
+* first percentile across all 20 to 99th percentile: -1.2 to 2.9
+graph set window fontface "Times New Roman"
+est restore mi_main_contemp_full
+mimrgns, at(cci_tot_sd=(-1.2(1)2.9)) predict(mu) cmdmargins
+marginsplot, ///
+    recast(line) ///
+    recastci(rarea) ///
+    plot1opts(lcolor(gs4) lwidth(medium) mcolor(gs4) msize(small)) ///
+    ci1opts(color(gs7%40)) ///
+    xtitle("CCI Score (in SD)", size(medium)) ///
+    ytitle("Predicted GDS-15 Score", size(medium)) ///
+    title("Predicted Number of Depressive Symptoms (GDS-15)" "by Self-Assessed Decline (CCI)", size(medlarge) color(black)) ///
+    xlabel(, labsize(small)) ///
+    ylabel(, labsize(small) angle(horizontal)) ///
+    legend(off) ///
+    graphregion(fcolor(white) lcolor(white) margin(medium)) ///
+    plotregion(fcolor(white) lcolor(black)) ///
+    xsize(4) ysize(4)
+graph export "../Figures/F2_mi_main-effects-full_2025.tif", replace width(3000)
+
+
+* plot for diagnosis
+graph set window fontface "Times New Roman"
+est restore mi_main_contemp_full
+mimrgns, at(MCIdem_iadc=(0 1)) predict(mu) cmdmargins
+marginsplot, ///
+    recast(bar) ///
+    ciopts(lcolor(black) lwidth(medium)) ///
+    plot1opts(fcolor(gs7) lcolor(black)) ///
+    ylabel(0(1)4, labsize(small) angle(horizontal)) ///
+    ytitle("Predicted GDS-15 Score", size(medium)) ///
+    xtitle("Diagnostic Status", size(medium)) ///
+    title("Predicted Number of Depressive Symptoms (GDS-15)" "by Diagnostic Status", size(medlarge) color(black)) ///
+    xlabel(0 "No Diagnosis" 1 "MCI or Dementia Diagnosis", labsize(small)) ///
+    legend(off) ///
+    graphregion(fcolor(white) lcolor(white) margin(medium)) ///
+    plotregion(fcolor(white) lcolor(black)) ///
+    yscale(range(0 4.5)) ///
+    xsize(4) ysize(4)
+graph export "../Figures/F1_mi_main-effects-Dx_2025.tif", replace width(3000)
+	
+* Tables
+esttab mi_main_contemp_red mi_main_contemp_full using "../Tables/mi_main-results-contemp_2025.rtf", ///
+    replace ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Multilevel Poisson Model for GDS-15 (IRRs)") ///
+    mtitles("Model 1" "Model 2") ///
+    label	
+************************
+// Supplementary
+
+*****
+/* Interactions with time since last wave
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+
+foreach n of numlist 1/20 {
+    replace _`n'_gds15 = . if gds15 == .
+}
+
+mi xtset id wave
+save "mi20_iadc-long-recoded_temp.dta", replace
+mi convert flong
+
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	c.yrs_since_last ///
+	c.L_cci_tot_sd ///
+	c.L_cci_inftot_sd ///
+	c.L_mocatots_sd ///
+	i.L_MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto mi_yrssince1
+
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	c.yrs_since_last ///
+	c.L_cci_tot_sd c.L_cci_tot_sd#c.yrs_since_last ///
+	c.L_cci_inftot_sd ///
+	c.L_mocatots_sd ///
+	i.L_MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto mi_yrssince2
+
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	c.yrs_since_last ///
+	c.L_cci_tot_sd ///
+	c.L_cci_inftot_sd ///
+	c.L_mocatots_sd ///
+	i.L_MCIdem_iadc i.L_MCIdem_iadc#c.c.yrs_since_last ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto mi_yrssince3
+
+mi estimate, cmdok eform post: menbreg gds15 ///
+	c.yrs_since_last ///
+	c.L_cci_tot_sd c.L_cci_tot_sd#c.yrs_since_last ///
+	c.L_cci_inftot_sd c.L_cci_inftot_sd#c.yrs_since_last ///
+	c.L_mocatots_sd c.L_mocatots_sd#c.yrs_since_last ///
+	i.L_MCIdem_iadc i.L_MCIdem_iadc#c.c.yrs_since_last ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto mi_yrssince4
+*
+
+* VIFS
+
+mi estimate: regress gds15 ///
+    c.L_cci_tot_sd  ///
+    c.L_cci_inftot_sd  ///
+    c.L_mocatots_sd ///
+    i.L_MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+    /// bmi_sd ///
+	i.married
+mivif
+* mean: 1.64
+* max: 3.27 (CCI informant)
+
+mi estimate: regress gds15 ///
+    c.yrs_since_last ///
+    c.L_cci_tot_sd ///
+    c.L_cci_inftot_sd ///
+    c.L_mocatots_sd ///
+    i.L_MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+    /// bmi_sd ///
+	i.married
+mivif
+* mean: 1.60 
+* max: 3.28 (CCI informant)
+
+mi estimate: regress gds15 ///
+    c.yrs_since_last ///
+    c.L_cci_tot_sd c.L_cci_tot_sd#c.yrs_since_last ///
+    c.L_cci_inftot_sd ///
+    c.L_mocatots_sd ///
+    i.L_MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+    /// bmi_sd ///
+	i.married
+mivif
+* mean: 3.18
+* max: 13.56 (CCI) 13.16 (CCI#yrs_since)
+
+mi estimate: regress gds15 ///
+    c.yrs_since_last ///
+    c.L_cci_tot_sd ///
+    c.L_cci_inftot_sd ///
+    c.L_mocatots_sd ///
+    i.L_MCIdem_iadc i.L_MCIdem_iadc#c.yrs_since_last ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+    /// bmi_sd ///
+	i.married
+mivif
+* mean: 3.54
+* max: 16.55 (MCI) 15.87 (MCI#yrs)
+
+mi estimate: regress gds15 ///
+    c.yrs_since_last ///
+    c.L_cci_tot_sd c.L_cci_tot_sd#c.yrs_since_last ///
+    c.L_cci_inftot_sd c.L_cci_inftot_sd#c.yrs_since_last ///
+    c.L_mocatots_sd c.L_mocatots_sd#c.yrs_since_last ///
+    i.L_MCIdem_iadc i.L_MCIdem_iadc#c.yrs_since_last ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+    /// bmi_sd ///
+	i.married
+mivif
+* mean: 15.65
+* max: 44.12 (CCI Informant#yrs) 43.09 (CCI Informant) 36.44 (moca#yrs)  36.04 (moca)
+
+// Plots & Tables
+
+* Coefficient table
+esttab mi_main_full mi_yrssince1 mi_yrssince2 mi_yrssince3 mi_yrssince4 using "../Tables/mi_main-yrssince_2025.rtf", ///
+    replace ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Multilevel Negative Binomial for GDS-15 (IRRs)") ///
+    mtitles("Model 1" "Model 2" "Model 3" "Model 4" "Model 5") ///
+    label
+	
+sum yrs_since_last if L_MCIdem_iadc == 0
+* min: 0.33 max: 2.5
+sum yrs_since_last if L_MCIdem_iadc == 1
+* min: 0.3 max: 2.5
+sum L_cci_tot_sd if yrs_since_last > 2.4
+* -1.228328   4.005096
+sum L_cci_tot_sd if yrs_since_last < 0.5
+* -1.228328   3.401239
+
+* CCI plot
+est restore mi_yrssince2
+mimrgns, at(L_cci_tot_sd=(-1.2(0.4)3) yrs_since_last=(0.5(0.5)2.5)) predict(mu) cmdmargins
+marginsplot, ///
+    recast(line) ///
+    recastci(rarea) ///
+    plot1opts(lcolor("204 62 54") lwidth(medium)) ///
+    plot2opts(lcolor("242 166 85") lwidth(medium)) ///
+    plot3opts(lcolor("244 216 134") lwidth(medium)) ///
+    plot4opts(lcolor("92 154 198") lwidth(medium)) ///
+    plot5opts(lcolor("59 105 170") lwidth(medium)) ///
+    noci ///
+    xtitle("CCI Total Score (in SD)") ///
+    ytitle("Predicted GDS15 Score") ///
+    title("Predicted GDS15 by CCI and Time Elapsed Since Prior Wave") ///
+    legend(order(1 "0.5" 2 "1.0" 3 "1.5" ///
+                 4 "2.0" 5 "2.5") ///
+           title("Years Since Prior Wave", size(size)) ///
+           cols(1) size(small))
+graph export "../Figures/mi_yrssince-cci-int_2025.jpg", replace
+
+* CCI interaction second difference table
+est restore mi_yrssince2
+mimrgns, dydx(L_cci_tot_sd) at(yrs_since_last=(0.5 2.5)) predict(mu) post
+matrix b = e(b_mi)
+matrix V = e(V_mi)
+matrix df = e(df_mi)
+local me1: di %5.3f b[1,1]
+local me2: di %5.3f b[1,2]
+local se1 = sqrt(V[1,1])
+local se2 = sqrt(V[2,2])
+local t1 = b[1,1] / `se1'
+local t2 = b[1,2] / `se2'
+local df1 = df[1,1]
+local df2 = df[1,2]
+local p_me1 = 2*ttail(`df1', abs(`t1'))
+local p_me2 = 2*ttail(`df2', abs(`t2'))
+local sig1 = cond(`p_me1'<0.001, "***", cond(`p_me1'<0.01, "**", cond(`p_me1'<0.05, "*", "")))
+local sig2 = cond(`p_me2'<0.001, "***", cond(`p_me2'<0.01, "**", cond(`p_me2'<0.05, "*", "")))
+mlincom 2 - 1, stat(est p)
+local est3: di %5.3f r(est)
+local p3: di %5.3f r(p)
+local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
+file open myfile using "../Tables/mi_int-cci-timesince_2025.rtf", write replace
+file write myfile "{\rtf1\ansi\deff0" _n
+file write myfile "{\b Table: CCI Effect on GDS15 by Time Since Last Visit}\par\par" _n
+file write myfile "\trowd\trgaph100" _n
+file write myfile "\cellx4000\cellx8000" _n
+file write myfile "{\b Effect}\intbl\cell" _n
+file write myfile "{\b Estimate}\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "CCI effect at 0.5 years\intbl\cell" _n
+file write myfile "`me1'`sig1'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "CCI effect at 2.5 years\intbl\cell" _n
+file write myfile "`me2'`sig2'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Difference (interaction)\intbl\cell" _n
+file write myfile "`est3'`sig3'\intbl\cell\row" _n
+file write myfile "{\i Note:} * p<0.05, ** p<0.01, *** p<0.001\par" _n
+file write myfile "}" _n
+file close myfile
+
+
+* Diagnosis plot
+est restore mi_yrssince3
+mimrgns, dydx(L_MCIdem_iadc) at(yrs_since_last=(0.5 1 1.5 2 2.5)) predict(mu) cmdmargins
+marginsplot, ///
+    recast(scatter) ///
+    plot1opts(mcolor(navy) msize(large) msymbol(circle)) ///
+    yline(0, lcolor(black) lpattern(dash)) ///
+    ytitle("Effect of Diagnosis (ref=No Dx) on GDS15") ///
+    xtitle("Years Since Last Visit") ///
+    title("Predicted Effect of MCI/Dementia Diagnosis Across Time") ///
+    xlabel(0.5(0.5)2.5) ///
+    legend(off)
+graph export "../Figures/mi_yrssince-diag-int_2025.jpg", replace
+           
+* Diagnosis interaction second difference table
+est restore mi_yrssince3
+file open myfile using "../Tables/mi_int-diag-timesince_2025.rtf", write replace
+file write myfile "{\rtf1\ansi\deff0" _n
+file write myfile "{\b Table: Diagnosis Effects on GDS15 by Time Since Last Visit}\par\par" 
+file write myfile "\trowd\trgaph100" _n
+file write myfile "\cellx4000\cellx8000" _n
+file write myfile "{\b Effect}\intbl\cell" _n
+file write myfile "{\b Estimate}\intbl\cell\row" _n
+mimrgns, at(yrs_since_last=(0.5 2.5) L_MCIdem_iadc=(0 1)) predict(mu) post
+mlincom 2 - 1, stat(est p)
+local est1: di %5.3f r(est)
+local p1: di %5.3f r(p)
+local sig1 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Diagnosis effect (1=MCI/dementia) at 0.5 years\intbl\cell" _n
+file write myfile "`est1'`sig1' \intbl\cell\row" _n
+mlincom 4 - 3, stat(est p)
+local est2: di %5.3f r(est)
+local p2: di %5.3f r(p)
+local sig2 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Diagnosis effect (1=MCI/dementia) at 2.5 years\intbl\cell" _n
+file write myfile "`est2'`sig2'\intbl\cell\row" _n
+mlincom (4 - 3) - (2 - 1), stat(est p)
+local est3: di %5.3f r(est)
+local p3: di %5.3f r(p)
+local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Interaction (second difference) \intbl\cell" _n
+file write myfile "`est3'`sig3' \intbl\cell\row" _n
+file write myfile "{\i Note:} * p<0.05, ** p<0.01, *** p<0.001\par" _n
+file write myfile "}" _n
+file close myfile
+
+
+/* Years since diagnosis (nope)
+sort _mi_m id visitdate_s
+by _mi_m id: egen ever_diagnosed = max(MCIdem_iadc)
+by _mi_m id: gen first_diag_wave = wave if MCIdem_iadc == 1 & MCIdem_iadc[_n-1] == 0
+by _mi_m id: egen initial_diagnosis_wave = min(first_diag_wave)
+drop first_diag_wave
+by _mi_m id: replace initial_diagnosis_wave = wave[1] if MCIdem_iadc[1] == 1
+gen initial_diagnosis_date = visitdate_s if wave == initial_diagnosis_wave
+by _mi_m id: egen diagnosis_date = min(initial_diagnosis_date)
+format diagnosis_date %td
+drop initial_diagnosis_date
+gen years_since_diagnosis = (visitdate_s - diagnosis_date) / 365.25 if ever_diagnosed == 1
+label variable years_since_diagnosis "Years since initial MCI/dementia diagnosis"
+label variable initial_diagnosis_wave "Wave of initial diagnosis"
+label variable diagnosis_date "Date of initial diagnosis"
+label variable ever_diagnosed "Ever diagnosed with MCI/dementia (0=Never, 1=Ever)"
+mi register passive years_since_diagnosis initial_diagnosis_wave ///
+    diagnosis_date ever_diagnosed
+mi est: mean ever_diagnosed
+mi est: mean years_since_diagnosis
+mi estimate, cmdok eform post: menbreg gds15_filled2 ///
+	L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd ever_diagnosed ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+mi estimate, cmdok eform post: menbreg gds15_filled2 ///
+	L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd years_since_diagnosis ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+*/
+
+*/
+
+*****
+// Lagged models + past depression
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+
+mi xtset id wave
+
+* IV Lagged
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd faq_sd ///
+    /// bmi_sd ///
+	female white grade_sd ///
+	i.married ///
+	i.relsubj_simple ///
+	age_base_sd time_centered_sd ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto lagiv
+
+* IV lagged, DV lagged, and past depression history
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd faq_sd ///
+	/// bmi_sd ///
+	female white grade_sd ///
+    i.married i.relsubj_simple ///
+	age_base_sd time_centered_sd ///
+	L_gds15_filled2 i.pastdep ///
+    || id:, irr iterate(200) intpoints(12)
+est sto lagpastdep
+
+esttab lagiv ///
+	/// lagpastdep ///
+	using "../Tables/mi_main-dephist-results_2025.rtf", ///
+    replace ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Multilevel Poisson Model for GDS-15 (IRRs)") ///
+    mtitles("Model 1") /// 
+	/// "Model 2") ///
+    label
+	
+
+/* Drop MoCA < 10, age < 65, impaired not MCI
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+
+drop if gds15 == .
+mi xtset id wave
+
+preserve
+drop if mocatots < 10
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+    c.yrs_since_last time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto nomoca
+restore
+preserve
+drop if age_base < 65
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+    c.yrs_since_last time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto noage
+restore
+preserve
+drop if diag == "Impaired, not MCI"
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto noimp
+restore
+drop if mocatots < 10
+drop if age_base < 65
+drop if diag == "Impaired, not MCI"
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+    c.yrs_since_last time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto none
+esttab nomoca noage noimp none using "../Tables/mi_main-filtered_2025.rtf", ///
+    replace ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Multilevel Negative Binomial for GDS-15 (IRRs)") ///
+    mtitles("Model 1" "Model 2" "Model 3" "Model 4") ///
+    label
+*/
+
+*****
+// Other objective measures
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+
+mi xtset id wave
+
+* Craft
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	MCIdem_iadc cci_tot_sd cci_inftot_sd craftdre_sd ///
+    faq_sd ///
+	/// bmi_sd ///
+	female white grade_sd ///
+	i.married ///
+	i.relsubj_simple ///
+	age_base_sd time_centered_sd  ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto mi_craft
+
+* Rey
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	MCIdem_iadc cci_tot_sd cci_inftot_sd reydecorab_sd ///
+    faq_sd ///
+	/// bmi_sd ///
+	female white grade_sd  ///
+	i.married ///
+	i.relsubj_simple ///
+	age_base_sd time_centered_sd ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto mi_rey
+
+* Trails
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	MCIdem_iadc cci_tot_sd cci_inftot_sd trailbtime_sd faq_sd ///
+	/// bmi_sd ///
+    female white grade_sd ///
+	i.married ///
+	i.relsubj_simple ///
+	age_base_sd time_centered_sd ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto mi_trail
+
+esttab mi_craft mi_rey mi_trail using "../Tables/mi_supp-obj-results_2025.rtf", ///
+    replace ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Multilevel Poisson Model for GDS-15 (IRRs)") ///
+    mtitles("Model 1" "Model 2" "Model 3") ///
+    label
+ 
+*****
+/* Clinical depression	
+use "mi20_iadc-long-recoded_2025.dta", clear
+
+foreach n of numlist 1/20 {
+    replace _`n'_gds15 = . if gds15 == .
+	replace _`n'_dep15_f2 = . if gds15 == .
+}
+
+mi xtset id wave
+
+mi estimate, eform cmdok post: melogit dep15_f2 ///
+	cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, or iterate(200) intpoints(12) 
+est sto mi_bidep
+
+mimrgns, dydx(cci_tot_sd) predict(pr)
+mimrgns, dydx(MCIdem_iadc) predict(pr)
+	
+mi xeq: summarize cci_tot_sd, d
+
+* plot
+mimrgns, at(cci_tot_sd=(-1(1)3)) predict(pr) cmdmargins
+marginsplot, ///
+    recast(line) ///
+	recastci(rarea) ///
+    plot1opts(lcolor(navy) lwidth(medium) mcolor(navy) msize(small)) ///
+    ci1opts(color(navy%30)) ///
+    xtitle("CCI Total Score (in SD)") ///
+    ytitle("Predicted Pr Depression") ///
+    title("Predicted Pr Depression by CCI (in SD)") ///
+    legend(off)
+
+graph export "../Figures/mi_main-effects-bi-DV_2025.jpg", replace
+
+/* see how big the differences are in the confidence intervals
+est restore mi_bidep2
+preserve
+mimrgns, at(L_cci_tot_sd=(-1.2(0.4)2.8)) predict(pr) cmdmargins
+matrix rtable = r(table)
+matrix rtable  = (rtable[1..2, 1...]\ rtable[5..6, 1...])'
+_marg_save , saving(mimrgns_results , double replace)
+use mimrgns_results, clear
+list _margin _se _ci_lb _ci_ub , noobs separator(0)
+svmat double rtable , names(col)
+local vars _margin b _se se _ci_lb ll _ci_ub ul
+forvalues i = 1(2)8 {
+    local var1 : word   `i' of `vars'
+    local var2 : word `++i' of `vars'
+    generate double diff_`var2' = abs(`var1'-`var2')
+}
+list _margin b diff_b _se se diff_se _ci_lb ll diff_ll _ci_ub ul diff_ul , noobs separator(0)
+restore
+*/
+* Table
+esttab mi_bidep using "../Tables/mi_bi-results_2025.rtf", ///
+    replace ///
+	/// keep(L_cci_tot_sd L_cci_inftot_sd L_MCIdem_iadc L_mocatots_sd) ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Multilevel Logistic Regression for Depression (ORs)") ///
+    mtitles("Model 1") ///
+    label
+*/
+
+*****
+// Fixed effects
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+
+mi xtset id wave
+
+mi estimate, cmdok eform post: xtpoisson gds15 ///
+    MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd faq_sd ///
+	/// bmi_sd ///
+	time_centered_sd, ///
+    fe irr iterate(200)
+est sto m1_mi_fe
+
+mi estimate, cmdok eform post: xtpoisson gds15 ///
+    L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd faq_sd ///
+	/// bmi_sd ///
+    time_centered_sd c.yrs_since_last ///
+	, ///
+    fe irr iterate(200)
+est sto m2_mi_fe
+
+esttab m1_mi_fe m2_mi_fe using "../Tables/mi_fe-results_2025.rtf", ///
+    replace ///
+	/// keep(L_cci_tot_sd L_cci_inftot_sd L_MCIdem_iadc L_mocatots_sd) ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Fixed Effects Multilevel Poisson for GDS-15 (IRRs)") ///
+    mtitles("Model 1" "Model 2") ///
+    label
+		
+*****
+/* Variance decomposition
+
+mi estimate, cmdok post eform: mepoisson gds15 ///
+	cci_within_sd cci_mean_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto mi_vardecomp_contemp
+
+mi estimate, cmdok post eform: mepoisson gds15 ///
+	L_cci_within_sd cci_mean_sd L_cci_inftot_sd L_mocatots_sd L_MCIdem_iadc ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto mi_vardecomp_lagIV
+
+esttab mi_vardecomp_contemp mi_vardecomp_lagIV using "../Tables/mi_var-decomp-results_2025.rtf", ///
+    replace ///
+	/// keep(L_cci_tot_sd L_cci_inftot_sd L_MCIdem_iadc L_mocatots_sd) ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Multilevel Poisson for GDS-15 (IRRs)") ///
+    mtitles("Model 1") ///
+    label ///
+    addnote("Standard errors in parentheses. * p<0.05, ** p<0.01, *** p<0.001")
+*/
+	
+**# Bookmark #3
+********************************************************************************
+********************************************************************************
+****** Mediation
+********************************************************************************
+********************************************************************************	
+
+********************************************************************************
+// Contemporaenous mediation: hypothesized
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+qui drop if gds15 == .
+qui mi passive: gen gds15_copy1 = gds15
+qui mi passive: gen gds15_copy2 = gds15
+qui mi passive: gen gds15_copy3 = gds15
+
+mi xtset id wave
+
+qui mi estimate, cmdok post dots: gsem ///
+	/// No mediators ///
+	(gds15 <- cci_tot_sd cci_inftot_sd ///
+					mocatots_sd MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+					/// bmi ///
+                    yrs_since_last i.married i.relsubj_simple M1[id], poisson) ///
+	/// Mastery added ///
+	(gds15_copy1 <- cci_tot_sd cci_inftot_sd ///
+					mocatots_sd MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+					/// bmi ///
+                    yrs_since_last i.married i.relsubj_simple M1[id] ///
+					i.mastery1 i.mastery2, poisson) ///	
+	/// Social connectedness added ///
+	(gds15_copy2 <- cci_tot_sd cci_inftot_sd ///
+					mocatots_sd MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+					/// bmi ///
+                    yrs_since_last i.married i.relsubj_simple M1[id] ///
+					i.famfriends_f i.visitors_f, poisson) ///	
+	/// Both added ///
+	 (gds15_copy3 <- cci_tot_sd cci_inftot_sd ///
+                    mocatots_sd MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd ///
+					/// bmi ///
+                    yrs_since_last i.married i.relsubj_simple M1[id] ///
+					i.mastery1 i.mastery2 ///
+                    i.famfriends_f i.visitors_f ///
+                    faq_sd , poisson) ///
+	 , latent(M1) nocapslatent difficult iterate(400) 
+* specified as two, they are almost identical because same outcome and similar covariates. supported by: https://www.stata.com/manuals/semexample42g.pdf
+* does conflate within and between
+	
+estimates store both_models_re
+esttab both_models_re both_models_re both_models_re both_models_re ///
+    using "../Tables/mi_mediation-focal-contemp_2025.rtf", replace ///
+    equation(1 2 3 4) ///
+    mtitles("Model 1" "Model 2" "Model 3" "Model 4") ///
+    eform b(3) se(3) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    label nobaselevels drop(_cons var(M1[id])) ///
+    compress
+
+* CCI
+est restore both_models_re
+mimrgns, dydx(cci_tot_sd) post predict(equation(gds15)) /// no mediators (1)
+								predict(equation(gds15_copy1)) /// adds mastery (2)
+								predict(equation(gds15_copy2)) /// adds social (3)
+								predict(equation(gds15_copy3))
+estimates save "mimrgns_results_cci_contemp_hypoth", replace
+estimates use "mimrgns_results_cci_contemp_hypoth"
+estimates replay
+* mastery
+mlincom 1 - 2, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
+* social
+mlincom 1 - 3, stat(est se p)
+display %12.8f r(est)
+nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
+* both
+mlincom 1 - 4, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
+
+* Diagnosis
+est restore both_models_re
+mimrgns, dydx(MCIdem_iadc) post predict(equation(gds15)) /// no mediators (1)
+								predict(equation(gds15_copy1)) /// adds mastery (2)
+								predict(equation(gds15_copy2)) /// adds social (3)
+								predict(equation(gds15_copy3))
+estimates save "mimrgns_results_diag_contemp_hypoth", replace
+estimates use "mimrgns_results_diag_contemp_hypoth"
+
+* mastery
+mlincom 1 - 2, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
+* social
+mlincom 1 - 3, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
+* both
+mlincom 1 - 4, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
+
+********************************************************************************
+// Contemporaenous mediation: not hypothesized (moca/faq)
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+qui drop if gds15 == .
+qui mi passive: gen gds15_copy1 = gds15
+qui mi passive: gen gds15_copy2 = gds15
+qui mi passive: gen gds15_copy3 = gds15
+
+mi xtset id wave
+
+qui mi estimate, cmdok post dots: gsem ///
+	/// No mediators ///
+	(gds15 <- cci_tot_sd cci_inftot_sd ///
+					MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd ///
+					/// bmi ///
+                    yrs_since_last i.married i.relsubj_simple M1[id], poisson) ///
+	/// MoCA added ///
+	(gds15_copy1 <- cci_tot_sd cci_inftot_sd ///
+					mocatots_sd MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd ///
+					/// bmi ///
+                    yrs_since_last i.married i.relsubj_simple ///
+					mocatots_sd M1[id], poisson) ///
+	/// FAQ added ///
+	(gds15_copy2 <- cci_tot_sd cci_inftot_sd ///
+					MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd ///
+					/// bmi ///
+                    yrs_since_last i.married i.relsubj_simple ///
+					faq_sd M1[id], poisson) ///	
+	/// Both added ///
+	(gds15_copy3 <- cci_tot_sd cci_inftot_sd ///
+					MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd ///
+					/// bmi ///
+                    yrs_since_last i.married i.relsubj_simple ///
+					mocatots_sd faq_sd  M1[id], poisson) ///	
+	 , latent(M1) nocapslatent difficult iterate(400) 
+* specified as two, they are almost identical because same outcome and similar covariates. supported by: https://www.stata.com/manuals/semexample42g.pdf
+* does conflate within and between
+	
+estimates store both_models_re_moca
+esttab both_models_re_moca both_models_re_moca both_models_re_moca both_models_re_moca ///
+    using "../Tables/mi_mediation-alt-contemp_2025.rtf", replace ///
+    equation(1 2 3 4) ///
+    mtitles("Model 1" "Model 2" "Model 3" "Model 4") ///
+    eform b(3) se(3) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    label nobaselevels drop(_cons var(M1[id])) ///
+    compress ///
+	order(MCIdem_iadc cci_tot_sd cci_inftot_sd ///
+          female white grade_sd ///
+		  2.married 3.married 2.relsubj_simple 3.relsubj_simple 4.relsubj_simple ///
+		  age_base_sd time_centered_sd yrs_since_last ///
+          mocatots_sd faq_sd)
+	
+* CCI
+est restore both_models_re_moca
+mimrgns, dydx(cci_tot_sd) post predict(equation(gds15)) /// no mediators (1)
+								predict(equation(gds15_copy1)) /// adds mastery (2)
+								predict(equation(gds15_copy2)) /// adds social (3)
+								predict(equation(gds15_copy3))
+estimates save "mimrgns_results_cci_contemp_moca", replace
+estimates use "mimrgns_results_cci_contemp_moca"
+estimates replay
+* moca
+mlincom 1 - 2, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
+* faq
+mlincom 1 - 3, stat(est se p)
+display %12.8f r(est)
+nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
+* both
+mlincom 1 - 4, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
+
+* Diagnosis
+est restore both_models_re_moca
+mimrgns, dydx(MCIdem_iadc) post predict(equation(gds15)) /// no mediators (1)
+								predict(equation(gds15_copy1)) /// adds mastery (2)
+								predict(equation(gds15_copy2)) /// adds social (3)
+								predict(equation(gds15_copy3))
+estimates save "mimrgns_results_diag_contemp_moca", replace
+estimates use "mimrgns_results_diag_contemp_moca"
+* moca
+mlincom 1 - 2, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
+* faq
+mlincom 1 - 3, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
+* both
+mlincom 1 - 4, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
+
+
+********************************************************************************
+/* Lag mediation
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+qui drop if gds15 == .
+qui mi passive: gen gds15_copy1 = gds15
+qui mi passive: gen gds15_copy2 = gds15
+qui mi passive: gen gds15_copy3 = gds15
+qui mi xtset id wave
+
+qui mi estimate, cmdok post dots: gsem ///
+	/// No mediators ///
+	(gds15 <- L2_cci_tot_sd L2_cci_inftot_sd ///
+					L2_mocatots_sd L2_MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+					/// bmi ///
+                    yrs_since_last i.married ///
+					M1[id], poisson) ///
+	/// Mastery added ///
+	(gds15_copy1 <- L2_cci_tot_sd L2_cci_inftot_sd ///
+					L2_mocatots_sd L2_MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+					/// bmi ///
+                    yrs_since_last i.married ///
+					i.L_mastery1 i.L_mastery2 ///
+					M1[id], poisson) ///	
+	/// Social connectedness added ///
+	(gds15_copy2 <- L2_cci_tot_sd L2_cci_inftot_sd ///
+					L2_mocatots_sd L2_MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+					/// bmi ///
+                    yrs_since_last i.married ///
+					i.L_famfriends_f i.L_visitors_f ///
+					M1[id], poisson) ///	
+	/// All three added ///
+	 (gds15_copy3 <- L2_cci_tot_sd L2_cci_inftot_sd ///
+                    L2_mocatots_sd L2_MCIdem_iadc ///
+                    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+					/// bmi ///
+                    yrs_since_last i.married ///
+					i.L_mastery1 i.L_mastery2 ///
+                    i.L_famfriends_f i.L_visitors_f ///
+					M1[id], poisson) ///
+	 , latent(M1) nocapslatent difficult iterate(400) 
+estimates store both_models_re_lag
+
+* CCI
+mimrgns, dydx(L2_cci_tot_sd) post predict(equation(gds15)) /// no mediators (1)
+								predict(equation(gds15_copy1)) /// adds mastery (2)
+								predict(equation(gds15_copy2)) /// adds social (3)
+								predict(equation(gds15_copy3))
+estimates save "mimrgns_results_cci_lag", replace
+est use "mimrgns_results_cci_lag"
+* mastery (p=0.022, 22.7%)
+mlincom 1 - 2, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
+* social (p=0.978, 0.2%)
+mlincom 1 - 3, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
+* faq (p=0.979, -0.2%)
+mlincom 1 - 4, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
+
+* Diagnosis
+est restore both_models_re_lag
+mimrgns, dydx(L2_MCIdem_iadc) post predict(equation(gds15)) /// no mediators (1)
+								predict(equation(gds15_copy1)) /// adds mastery (2)
+								predict(equation(gds15_copy2)) /// adds social (3)
+								predict(equation(gds15_copy3)) /// adds faq (4)
+								predict(equation(gds15_copy4)) // adds all three (5)
+estimates save "mimrgns_results_diag_lag", replace
+est use "mimrgns_results_diag_lag"
+* mastery
+mlincom 1 - 2, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
+* social
+mlincom 1 - 3, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
+* faq
+mlincom 1 - 4, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
+* all three
+mlincom 1 - 5, stat(est se p)
+nlcom (pct_mediated: (_b[1._predict] - _b[5._predict]) / _b[1._predict] * 100)
+*/
+
+
+/* FAQ as a mediator of mastery for CCI
+
+use "mi20_iadc-long-recoded.dta", clear
+drop if gds15_filled2 == .
+
+mi xtset id wave
+
+mi estimate, cmdok post dots: gsem (gds15_filled2 <- faq_sd ///
+			mastery1_sd mastery2_sd ///
+			cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+			time_centered_sd age_base_sd female white grade_sd ///
+			/// bmi_sd ///
+			yrs_since_last i.married ///
+			M1[id], family(nbinomial)) ///
+     (mastery1_sd <- faq_sd ///
+			cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+			time_centered_sd age_base_sd female white grade_sd ///
+			/// bmi_sd ///
+			yrs_since_last i.married ///
+			M2[id]) ///
+     (mastery2_sd <- faq_sd ///
+			cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
+			time_centered_sd age_base_sd female white grade_sd ///
+			/// bmi_sd ///
+			yrs_since_last i.married ///
+			M3[id]) ///
+     (faq_sd <- cci_tot_sd ///
+			cci_inftot_sd mocatots_sd MCIdem_iadc ///
+			time_centered_sd age_base_sd female white grade_sd ///
+			/// bmi_sd ///
+			yrs_since_last i.married ///
+			M4[id]), ///
+     latent(M1 M2 M3 M4) nocapslatent difficult
+    
+ nlcom 	(indirect_faq_only: _b[faq_sd:cci_tot_sd] * _b[gds15_filled2:faq_sd]) ///
+			(indirect_faq_both_mastery: _b[faq_sd:cci_tot_sd] * _b[mastery1_sd:faq_sd] * ///
+						_b[gds15_filled2:mastery1_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[mastery2_sd:faq_sd] * _b[gds15_filled2:mastery2_sd]) ///
+			(total_indirect: _b[faq_sd:cci_tot_sd] * _b[gds15_filled2:faq_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[mastery1_sd:faq_sd] * _b[gds15_filled2:mastery1_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[mastery2_sd:faq_sd] * _b[gds15_filled2:mastery2_sd]) ///
+			(direct: _b[gds15_filled2:cci_tot_sd]) ///
+			(total: _b[gds15_filled2:cci_tot_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[gds15_filled2:faq_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[mastery1_sd:faq_sd] * _b[gds15_filled2:mastery1_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[mastery2_sd:faq_sd] * _b[gds15_filled2:mastery2_sd]) ///
+			(perc_med: 100 * (_b[faq_sd:cci_tot_sd] * _b[gds15_filled2:faq_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[mastery1_sd:faq_sd] * _b[gds15_filled2:mastery1_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[mastery2_sd:faq_sd] * _b[gds15_filled2:mastery2_sd]) / ///
+						(_b[gds15_filled2:cci_tot_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[gds15_filled2:faq_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[mastery1_sd:faq_sd] * _b[gds15_filled2:mastery1_sd] + ///
+						_b[faq_sd:cci_tot_sd] * _b[mastery2_sd:faq_sd] * _b[gds15_filled2:mastery2_sd]))
+*/
+
+**# Bookmark #4
+********************************************************************************
+********************************************************************************
+****** Interactions
+********************************************************************************
+********************************************************************************
+
+/* Descriptive combinations
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+mi xtset id wave
+
+mi passive: gen cci_x_inf_bi = .
+mi passive: replace cci_x_inf_bi = 0 if cci_tot_bi == 0 & cci_inftot_bi == 0
+mi passive: replace cci_x_inf_bi = 1 if cci_tot_bi == 1 & cci_inftot_bi == 0
+mi passive: replace cci_x_inf_bi = 2 if cci_tot_bi == 0 & cci_inftot_bi == 1
+mi passive: replace cci_x_inf_bi = 3 if cci_tot_bi == 1 & cci_inftot_bi == 1
+
+mi passive: gen cci_x_diag_bi = .
+mi passive: replace cci_x_diag_bi = 0 if cci_tot_bi == 0 & MCIdem_iadc == 0
+mi passive: replace cci_x_diag_bi = 1 if cci_tot_bi == 1 & MCIdem_iadc == 0
+mi passive: replace cci_x_diag_bi = 2 if cci_tot_bi == 0 & MCIdem_iadc == 1
+mi passive: replace cci_x_diag_bi = 3 if cci_tot_bi == 1 & MCIdem_iadc == 1
+
+mi passive: gen diag_x_inf_bi = .
+mi passive: replace diag_x_inf_bi = 0 if MCIdem_iadc == 0 & cci_inftot_bi == 0
+mi passive: replace diag_x_inf_bi = 1 if MCIdem_iadc == 1 & cci_inftot_bi == 0
+mi passive: replace diag_x_inf_bi = 2 if MCIdem_iadc == 0 & cci_inftot_bi == 1
+mi passive: replace diag_x_inf_bi = 3 if MCIdem_iadc == 1 & cci_inftot_bi == 1
+
+mi estimate: mean gds15, over(cci_x_inf_bi)
+mi estimate: mean gds15, over(cci_x_diag_bi)
+mi estimate: mean gds15, over(diag_x_inf_bi)
+
+mi estimate, eform cmdok post: mepoisson gds15 ///
+	i.cci_x_inf_bi MCIdem_iadc mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	yrs_since_last i.married ///
+    || id:, irr iterate(400) intpoints(12) 
+mi estimate, eform cmdok post: mepoisson gds15 ///
+	i.cci_x_diag_bi cci_inftot_sd mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	yrs_since_last i.married ///
+    || id:, irr iterate(400) intpoints(12) 
+mi estimate, eform cmdok post: mepoisson gds15 ///
+	i.diag_x_inf_bi cci_tot_sd mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	yrs_since_last i.married ///
+    || id:, irr iterate(400) intpoints(12) 
+*/
+
+**********************
+* Diagnosis x CCI
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+mi xtset id wave
+
+* binary:  p=0.318
+
+mi estimate, eform cmdok post: mepoisson gds15 ///
+	i.MCIdem_iadc##c.cci_tot_sd cci_inftot_sd mocatots_sd faq_sd ///
+	/// bmi_sd /// 
+    female white grade_sd  ///
+	i.married  i.relsubj_simple ///
+	age_base_sd time_centered_sd    ///
+    || id:, irr iterate(400) intpoints(12) 
+est sto m_int_diag
+
+	
+* second difference table
+est restore m_int_diag
+gen insample = !missing(gds15, MCIdem_iadc, cci_tot_sd, cci_inftot_sd, ///
+               mocatots_sd, faq_sd, female, white, grade_sd, ///
+               married, relsubj_simple, age_base_sd, time_centered_sd)
+mimrgns, dydx(MCIdem_iadc) at(cci_tot_sd=(-1.2 3.5)) predict(mu) subpop(insample) post
+matrix b = e(b_mi)
+matrix V = e(V_mi)
+matrix df = e(df_mi)
+local me1: di %5.3f b[1,1]
+local me2: di %5.3f b[1,2]
+local se1 = sqrt(V[1,1])
+local se2 = sqrt(V[2,2])
+local se1_fmt: di %5.3f `se1'
+local se2_fmt: di %5.3f `se2'
+local t1 = b[1,1] / `se1'
+local t2 = b[1,2] / `se2'
+local df1 = df[1,1]
+local df2 = df[1,2]
+local p_me1 = 2*ttail(`df1', abs(`t1'))
+local p_me2 = 2*ttail(`df2', abs(`t2'))
+local sig1 = cond(`p_me1'<0.001, "***", cond(`p_me1'<0.01, "**", cond(`p_me1'<0.05, "*", "")))
+local sig2 = cond(`p_me2'<0.001, "***", cond(`p_me2'<0.01, "**", cond(`p_me2'<0.05, "*", "")))
+mlincom 2 - 1, stat(est p se)
+local est3: di %5.3f r(est)
+local se3: di %5.3f r(se)
+local p3: di %5.3f r(p)
+local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
+file open myfile using "../Tables/mi_int-cci-diag_2025.rtf", write replace
+file write myfile "{\rtf1\ansi\deff0" _n
+file write myfile "{\b Table 6: Diagnosis Marginal Effect on GDS-15 by CCI}\par\par" _n
+file write myfile "\trowd\trgaph100" _n
+file write myfile "\cellx4000\cellx8000" _n
+file write myfile "{\b Effect}\intbl\cell" _n
+file write myfile "{\b Estimate}\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Diagnosis effect at CCI = -1.2 SD\intbl\cell" _n
+file write myfile "`me1'`sig1'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "\intbl\cell" _n
+file write myfile "(`se1_fmt')\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Diagnosis effect at CCI = 3.5 SD\intbl\cell" _n
+file write myfile "`me2'`sig2'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "\intbl\cell" _n
+file write myfile "(`se2_fmt')\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Difference (interaction)\intbl\cell" _n
+file write myfile "`est3'`sig3'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "\intbl\cell" _n
+file write myfile "(`se3')\intbl\cell\row" _n
+file write myfile "{\i Note:} * p<0.05, ** p<0.01, *** p<0.001\par" _n
+file write myfile "}" _n
+file close myfile
+
+**
+* Get predictions in empirical range
+
+* CCI at L_MCIdem_iadc==0 (normal)
+mi xeq: sum cci_tot_sd if MCIdem_iadc == 0, d
+* min cci across all 20: -1.212761   
+* smallest max cci across 20: 4.147753
+
+* CCI at L_MCIdem_iadc==1 (diagnosed)
+mi xeq: sum cci_tot_sd if MCIdem_iadc == 1, d
+* min cci across all 20: -1.212761 
+* smallest max cci across 20: 3.529232
+
+* Bounds: -1.2 to 3.5
+
+**
+* Plot
+
+est restore m_int_diag
+mimrgns, dydx(MCIdem_iadc) at(cci_tot_sd=(-1.2 3.5)) subpop(insample) predict(mu) cmdmargins
+marginsplot, ///
+    recast(scatter) ///
+    recastci(rcap) ///
+    plot1opts(mcolor(black) msize(large)) ///
+    ci1opts(color(black) lwidth(medium)) ///
+    ytitle("Average Marginal Effect of MCI/Dementia Diagnosis", size(medium)) ///
+    xtitle("CCI Score (in SD)", size(medium)) ///
+    title("Effect of Diagnosis on Predicted Number of Depressive" "Symptoms (GDS-15) by Self-Assessed Decline (CCI)", ///
+			size(medlarge) color(black)) ///
+    xlabel(-1.2 `"-1.2 (Low/Normal)"' 3.5 `"3.5 (High/Worried)"', labsize(small)) ///
+    xscale(range(-3 5)) ///
+    ylabel(-3(1)1, labsize(small) angle(horizontal)) ///
+    yline(0, lpattern(dash) lcolor(gray)) ///
+    legend(off) ///
+    graphregion(fcolor(white) lcolor(white) margin(medium)) ///
+    plotregion(fcolor(white) lcolor(black)) ///
+    xsize(5) ysize(4)
+graph export "../Figures/F5_mi_int-diag-cci-rev_2025.tif", replace
+	
+/*
+est restore m_int_diag
+mimrgns, at(cci_tot_sd=(-1.2(0.4)3.5) MCIdem_iadc=(0 1)) predict(mu) cmdmargins
+marginsplot, ///
+    recast(line) ///
+	recastci(rarea) ///
+    plot1opts(lcolor("49 54 149") mcolor("49 54 149") lwidth(medium)) ///
+    ci1opts(color("49 54 149%30")) ///
+    plot2opts(lcolor("215 48 39") mcolor("215 48 39") lwidth(medium)) ///
+    ci2opts(color("215 48 39%30")) ///
+    xtitle("CCI in SD (high=worried)") ///
+    ytitle("Predicted GDS15 Score") ///
+    title("Predicted GDS15 by CCI and Diagnosis") ///
+	legend(order(3 "No MCI/Dementia" 4 "MCI/Dementia") ///
+           size(small) title("MCI/dementia diagnosis", size(small)))
+graph export "../Figures/mi_int-cci-diag-twoci_2025.jpg", replace
+*/
+
+**********************	
+* Informant x CCI
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+mi xtset id wave
+
+
+mi estimate, eform cmdok post: mepoisson gds15 ///
+	i.MCIdem_iadc c.cci_tot_sd##c.cci_inftot_sd c.mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	 i.married i.relsubj_simple ///
+    || id:, irr iterate(400) intpoints(12)
+est sto m_int_inf_rel	
+
+
+* second difference table
+est restore m_int_inf_rel	
+mimrgns, dydx(cci_tot_sd) at(cci_inftot_sd=(-0.8 2)) predict(mu) post
+matrix b = e(b_mi)
+matrix V = e(V_mi)
+matrix df = e(df_mi)
+local me1: di %5.3f b[1,1]
+local me2: di %5.3f b[1,2]
+local se1 = sqrt(V[1,1])
+local se2 = sqrt(V[2,2])
+local se1_fmt: di %5.3f `se1'
+local se2_fmt: di %5.3f `se2'
+local t1 = b[1,1] / `se1'
+local t2 = b[1,2] / `se2'
+local df1 = df[1,1]
+local df2 = df[1,2]
+local p_me1 = 2*ttail(`df1', abs(`t1'))
+local p_me2 = 2*ttail(`df2', abs(`t2'))
+local sig1 = cond(`p_me1'<0.001, "***", cond(`p_me1'<0.01, "**", cond(`p_me1'<0.05, "*", "")))
+local sig2 = cond(`p_me2'<0.001, "***", cond(`p_me2'<0.01, "**", cond(`p_me2'<0.05, "*", "")))
+mlincom 2 - 1, stat(est se p)
+local est3: di %5.3f r(est)
+local se3: di %5.3f r(se)
+local p3: di %5.3f r(p)
+local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
+file open myfile using "../Tables/mi_int-cci-inf_2025.rtf", write replace
+file write myfile "{\rtf1\ansi\deff0" _n
+file write myfile "{\b Table: CCI Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
+file write myfile "\trowd\trgaph100" _n
+file write myfile "\cellx4000\cellx8000" _n
+file write myfile "{\b Effect}\intbl\cell" _n
+file write myfile "{\b Estimate}\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "CCI effect at CCI Informant = -0.8 SD\intbl\cell" _n
+file write myfile "`me1'`sig1'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "\intbl\cell" _n
+file write myfile "(`se1_fmt')\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "CCI effect at CCI Informant = 2 SD\intbl\cell" _n
+file write myfile "`me2'`sig2'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "\intbl\cell" _n
+file write myfile "(`se2_fmt')\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Difference (interaction)\intbl\cell" _n
+file write myfile "`est3'`sig3'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "\intbl\cell" _n
+file write myfile "(`se3')\intbl\cell\row" _n
+file write myfile "{\i Note:} * p<0.05, ** p<0.01, *** p<0.001\par" _n
+file write myfile "}" _n
+file close myfile
+
+**
+
+mi xeq: sum cci_tot_sd , d
+mi xeq: sum cci_inftot_sd, d
+* lowest 10%/highest 90% cci across all 20:  -1.075312 / 1.604945
+* rounded: -1 to 1.6
+
+* CCI Informant at 90% CCI
+mi xeq: sum cci_inftot_sd if cci_tot_sd > 1.6
+* min/max across all 20:  -.8124925   3.132262
+
+* CCI at low values of CCI Informant (not worried)
+mi xeq: sum cci_inftot_sd if cci_tot_sd < -1
+* min across all 20/ smallest max in 20: -.8124925 1.998145
+* rounded: -0.8 to 2
+est restore m_int_inf_rel	
+
+mimrgns, at(cci_tot_sd=(-1(0.5)1.6) cci_inftot_sd=(-0.8 2)) predict(mu) cmdmargins
+marginsplot, ///
+    recast(line) ///
+    recastci(rarea) ///
+    plot1opts(lcolor(gs4) mcolor(gs4) lwidth(medium) lpattern(solid)) ///
+    ci1opts(color(gs4%30)) ///
+    plot2opts(lcolor(gs4) mcolor(gs4) lwidth(medium) lpattern(dash)) ///
+    ci2opts(color(gs10%30)) ///
+    xtitle("CCI Score (in SD)", size(medium)) ///
+    ytitle("Predicted GDS-15 Score", size(medium)) ///
+    title("Predicted Number of Depressive Symptoms (GDS-15) by" "Self-Assessed (CCI) and Informant-Perceived Decline (Informant CCI)", size(medlarge) color(black)) ///
+    xlabel(, labsize(small)) ///
+    ylabel(, labsize(small) angle(horizontal)) ///
+    legend(order(3 "-0.8 (Low/Normal)" 4 "2 (High/Worried)") ///
+            size(small) title("Informant CCI Score (in SD)", size(small))) ///
+    graphregion(fcolor(white) lcolor(white) margin(medium)) ///
+    plotregion(fcolor(white) lcolor(black)) ///
+    xsize(6) ysize(4)         
+graph export "../Figures/F7_mi_int-cci-inf-twoci_2025.tif", replace
+
+**********************	
+* Diagnosis x Informant
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+mi xtset id wave
+
+mi estimate, eform cmdok post: mepoisson gds15 ///
+	c.cci_inftot_sd##i.MCIdem_iadc c.cci_tot_sd c.mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	/// bmi_sd ///
+	i.married i.relsubj_simple ///
+    || id:, irr iterate(400) intpoints(12)
+est sto m_int_inf_diag_rel	
+
+
+* second difference table
+est restore m_int_inf_diag_rel
+mimrgns, dydx(MCIdem_iadc) at(cci_inftot_sd=(-.8 2.8)) predict(mu) post
+matrix b = e(b_mi)
+matrix V = e(V_mi)
+matrix df = e(df_mi)
+local me1: di %5.3f b[1,1]
+local me2: di %5.3f b[1,2]
+local se1 = sqrt(V[1,1])
+local se2 = sqrt(V[2,2])
+local se1_fmt: di %5.3f `se1'
+local se2_fmt: di %5.3f `se2'
+local t1 = b[1,1] / `se1'
+local t2 = b[1,2] / `se2'
+local df1 = df[1,1]
+local df2 = df[1,2]
+local p_me1 = 2*ttail(`df1', abs(`t1'))
+local p_me2 = 2*ttail(`df2', abs(`t2'))
+local sig1 = cond(`p_me1'<0.001, "***", cond(`p_me1'<0.01, "**", cond(`p_me1'<0.05, "*", "")))
+local sig2 = cond(`p_me2'<0.001, "***", cond(`p_me2'<0.01, "**", cond(`p_me2'<0.05, "*", "")))
+mlincom 2 - 1, stat(est se p)
+local est3: di %5.3f r(est)
+local se3: di %5.3f r(se)
+local p3: di %5.3f r(p)
+local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
+file open myfile using "../Tables/mi_int-diag-inf_2025.rtf", write replace
+file write myfile "{\rtf1\ansi\deff0" _n
+file write myfile "{\b Table: Diagnosis Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
+file write myfile "\trowd\trgaph100" _n
+file write myfile "\cellx4000\cellx8000" _n
+file write myfile "{\b Effect}\intbl\cell" _n
+file write myfile "{\b Estimate}\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Diagnosis effect at CCI Informant = -0.8 SD\intbl\cell" _n
+file write myfile "`me1'`sig1'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "\intbl\cell" _n
+file write myfile "(`se1_fmt')\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Diagnosis effect at CCI Informant = 2.8 SD\intbl\cell" _n
+file write myfile "`me2'`sig2'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "\intbl\cell" _n
+file write myfile "(`se2_fmt')\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "Difference (interaction)\intbl\cell" _n
+file write myfile "`est3'`sig3'\intbl\cell\row" _n
+file write myfile "\trowd\trgaph100\cellx4000\cellx8000" _n
+file write myfile "\intbl\cell" _n
+file write myfile "(`se3')\intbl\cell\row" _n
+file write myfile "{\i Note:} * p<0.05, ** p<0.01, *** p<0.001\par" _n
+file write myfile "}" _n
+file close myfile
+
+**
+* Get predictions in empirical range
+
+* CCI at L_MCIdem_iadc==0 (normal)
+mi xeq: sum cci_inftot_sd if MCIdem_iadc == 0, d
+* min cci across all 20: -.8124925 
+* smallest max cci across 20: 2.836405
+
+* CCI at L_MCIdem_iadc==1 (diagnosed)
+mi xeq: sum cci_inftot_sd if MCIdem_iadc == 1, d
+* min cci across all 20: -.8124925
+* smallest max cci across 20: 3.132262
+
+* Bounds: -0.8 to 2.8
+
+**
+* Plots
+/*est restore m_int_inf_diag_rel	
+mimrgns, at(cci_inftot_sd=(-0.8(0.5)2.8) MCIdem_iadc=(0 1)) predict(mu) cmdmargins
+marginsplot, ///
+    recast(line) ///
+	recastci(rarea) ///
+    plot1opts(lcolor("49 54 149") mcolor("49 54 149") lwidth(medium)) ///
+    ci1opts(color("49 54 149%30")) ///
+    plot2opts(lcolor("215 48 39") mcolor("215 48 39") lwidth(medium)) ///
+    ci2opts(color("215 48 39%30")) ///
+    xtitle("CCI Informant in SD (high=worried)") ///
+    ytitle("Predicted GDS15 Score") ///
+    title("Predicted GDS15 by CCI Informant and Diagnosis") ///
+	legend(order(3 "No MCI/Dementia" 4 "MCI/Dementia") ///
+           size(small) title("MCI/dementia diagnosis", size(small)))       
+graph export "../Figures/mi_int-diag-inf-twoci_2025.jpg", replace
+*/
+
+est restore m_int_inf_diag_rel
+mimrgns, dydx(MCIdem_iadc) at(cci_inftot_sd=(-0.8 2.8)) predict(mu) cmdmargins
+marginsplot, ///
+    recast(scatter) ///
+    recastci(rcap) ///
+    plot1opts(mcolor(black) msize(large)) ///
+    ci1opts(color(black) lwidth(medium)) ///
+    ytitle("Average Marginal Effect of MCI/Dementia Diagnosis", size(medium)) ///
+    xtitle("Informant CCI (in SD)", size(medium)) ///
+    title("Effect of Diagnosis on Predicted Number of Depressive" "Symptoms by Informant-Perceived Decline (Informant CCI)", ///
+			size(medlarge) color(black)) ///
+    xlabel(-0.8 `"-0.8 (Low/Normal)"' 2.8 `"2.8 (High/Worried)"', labsize(small)) ///
+    xscale(range(-3 5)) ///
+    ylabel(-1(0.5)1, labsize(small) angle(horizontal)) ///
+    yline(0, lpattern(dash) lcolor(gray)) ///
+    legend(off) ///
+    graphregion(fcolor(white) lcolor(white) margin(medium)) ///
+    plotregion(fcolor(white) lcolor(black)) ///
+    xsize(5) ysize(4)
+graph export "../Figures/F6_mi_int-diag-inf-rev_2025.tif", replace
+
+	
+/**********************
+// Multiple
+
+use "mi20_iadc-long-recoded.dta", clear
+drop if yrs_since_last > 2.5 & yrs_since_last != .
+
+foreach n of numlist 1/20 {
+    replace _`n'_gds15_filled2 = . if gds15_filled2 == .
+}
+mi xtset id wave
+save "mi20_iadc-long-recoded_temp.dta", replace
+mi convert flong
+mi estimate: regress gds15_filled2 ///
+	c.L_cci_tot_sd##c.L_cci_inftot_sd##i.L_MCIdem_iadc ///
+	c.L_mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married 
+mivif
+* not great
+
+mi estimate: regress gds15_filled2 ///
+	c.L_cci_tot_sd L_cci_inftot_sd L_MCIdem_iadc ///
+	c.L_cci_tot_sd#c.L_cci_inftot_sd ///
+	c.L_cci_tot_sd#i.L_MCIdem_iadc ///
+	c.L_mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married
+mivif	
+* not terrible
+
+mi estimate, cmdok eform post: menbreg gds15_filled2 ///
+	c.L_cci_tot_sd L_cci_inftot_sd L_MCIdem_iadc ///
+	c.L_cci_tot_sd#c.L_cci_inftot_sd ///
+	c.L_cci_tot_sd#i.L_MCIdem_iadc ///
+	c.L_mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto m_int_diaginf
+	
+mi estimate, cmdok eform post: menbreg gds15_filled2 ///
+	c.L_cci_tot_sd##c.L_cci_inftot_sd##i.L_MCIdem_iadc ///
+	c.L_mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto m_int_all
+
+mi estimate, cmdok eform post: menbreg gds15_filled2 ///
+	L_cci_tot_sd L_cci_inftot_sd i.L_MCIdem_iadc ///
+	c.L_cci_tot_sd#c.L_cci_inftot_sd ///
+	c.L_cci_tot_sd#i.L_MCIdem_iadc ///
+	c.L_mocatots_sd ///
+    time_centered_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto m_int_two
+mimrgns, dydx(L_cci_tot_sd) at(L_MCIdem_iadc=(0 1)) predict(mu) post
+mlincom 2 -1, stat(est p se)
+est restore m_int_two
+mimrgns, dydx(L_cci_tot_sd) at(L_cci_inftot_sd=(-0.85 2.2)) predict(mu) post
+mlincom 2 -1, stat(est p se)
+*/
+
+**********************
+* Focal interactions table
+esttab m_int_diag m_int_inf_diag_rel m_int_inf_rel using "../Tables/mi_focal-int-results_2025.rtf", ///
+    replace ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Multilevel Negative Binomial for GDS-15 (IRRs)") ///
+    mtitles("Model 1" "Model 2" "Model 3") ///
+    label
+
+********
+// Education interaction (not significant)
+
+use "mi20_iadc-long-recoded_2025.dta", clear
+
+drop if gds15 == .
+mi xtset id wave
+
+
+mi estimate, cmdok eform post: mepoisson gds15 ///
+	c.cci_tot_sd##c.grade_sd MCIdem_iadc cci_inftot_sd mocatots_sd ///
+    time_centered_sd age_base_sd female white faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto edint_cci
+
+mi estimate, cmdok eform post dots: mepoisson gds15 ///
+	c.cci_tot_sd i.MCIdem_iadc##c.grade_sd cci_inftot_sd mocatots_sd ///
+    time_centered_sd age_base_sd female white faq_sd ///
+	/// bmi_sd ///
+	i.married ///
+    || id:, irr iterate(200) intpoints(12) 
+est sto edint_diag
+	
+est restore edint_cci
+mimrgns, dydx(cci_tot_sd) at(grade_sd=(-1.5 1.5)) predict(mu) post
+mlincom 2 - 1, stat(est p se)
+
+est restore edint_diag
+mimrgns, dydx(MCIdem_iadc) at(grade_sd=(-1.5 1.5)) predict(mu) post
+mlincom 2 - 1, stat(est p se)
+
+
+	
+**# Bookmark #5
+********************************************************************************
+********************************************************************************
+****** Reverse Causality
+********************************************************************************
+********************************************************************************
+
+
+********************************************************************************
+// 1. Traditional CLPM
+********************************************************************************
+
+******************
+// CCI
+*******************
+use "mi20_iadc-long-recoded_2025.dta", clear
+
+drop if gds15 == .
+drop if cci_tot == .
+*keep if yrs_since_last >= 0.5 & yrs_since_last <= 1.5
+
+// Model
+mi estimate, cmdok post: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
+			 L_cci_inftot L_mocatots_sd ///
+			faq_sd /// bmi_sd ///
+			female white grade_sd i.married i.relsubj_simple ///
+			age_base_sd yrs_since_last time_centered_sd ///
+			L_gds15 M1[id], family(poisson)) ///
+    (cci_tot <- L_gds15 ///
+			faq_sd /// bmi_sd ///
+			female white grade_sd ///
+			i.married i.relsubj_simple ///
+			age_base_sd time_centered_sd yrs_since_last ///
+			L_cci_tot M2[id], family(poisson)), ///
+			cov(M1[id]*M2[id]) ///
+    latent(M1 M2) nocapslatent ///
+    difficult iterate(400) intpoints(12) technique(nr)
+
+est sto clpm_cci
+mibeta L_gds15 L_cci_tot
+display sqrt(.2205448) //.46962198
+estimates restore clpm_cci
+
+// Extract Coefs (exponentiated for IRRs)
+* Cross-lagged: CCI → Depression
+scalar c1 = exp(_b[gds15:L_cci_tot])
+scalar se1 = _se[gds15:L_cci_tot]
+scalar z1 = _b[gds15:L_cci_tot] / se1
+scalar p1 = 2 * normal(-abs(z1))
+
+* Cross-lagged: Depression → CCI
+scalar c2 = exp(_b[cci_tot:L_gds15])
+scalar se2 = _se[cci_tot:L_gds15]
+scalar z2 = _b[cci_tot:L_gds15] / se2
+scalar p2 = 2 * normal(-abs(z2))
+
+* Autoregressive: Depression → Depression
+scalar c3 = exp(_b[gds15:L_gds15])
+scalar se3 = _se[gds15:L_gds15]
+scalar z3 = _b[gds15:L_gds15] / se3
+scalar p3 = 2 * normal(-abs(z3))
+
+* Autoregressive: CCI → CCI
+scalar c4 = exp(_b[cci_tot:L_cci_tot])
+scalar se4 = _se[cci_tot:L_cci_tot]
+scalar z4 = _b[cci_tot:L_cci_tot] / se4
+scalar p4 = 2 * normal(-abs(z4))
+
+// Path diagram with pooled estimates
+clear
+set obs 4
+gen str30 path = ""
+gen float coef = .
+gen float se = .
+gen float pvalue = .
+gen float ci_lower = .
+gen float ci_upper = .
+
+* Fill in the extracted values
+replace path = "Cog_to_Dep" in 1
+replace coef = c1 in 1
+replace se = se1 in 1
+replace pvalue = p1 in 1
+replace ci_lower = exp(_b[gds15:L_cci_tot] - 1.96*se1) in 1
+replace ci_upper = exp(_b[gds15:L_cci_tot] + 1.96*se1) in 1
+
+replace path = "Dep_to_Cog" in 2
+replace coef = c2 in 2
+replace se = se2 in 2
+replace pvalue = p2 in 2
+replace ci_lower = exp(_b[cci_tot:L_gds15] - 1.96*se2) in 2
+replace ci_upper = exp(_b[cci_tot:L_gds15] + 1.96*se2) in 2
+
+replace path = "Dep_to_Dep" in 3
+replace coef = c3 in 3
+replace se = se3 in 3
+replace pvalue = p3 in 3
+replace ci_lower = exp(_b[gds15:L_gds15] - 1.96*se3) in 3
+replace ci_upper = exp(_b[gds15:L_gds15] + 1.96*se3) in 3
+
+replace path = "Cog_to_Cog" in 4
+replace coef = c4 in 4
+replace se = se4 in 4
+replace pvalue = p4 in 4
+replace ci_lower = exp(_b[cci_tot:L_cci_tot] - 1.96*se4) in 4
+replace ci_upper = exp(_b[cci_tot:L_cci_tot] + 1.96*se4) in 4
+
+* Add significance stars
+gen str5 sig = ""
+replace sig = "***" if pvalue < 0.001
+replace sig = "**" if pvalue < 0.01 & pvalue >= 0.001
+replace sig = "*" if pvalue < 0.05 & pvalue >= 0.01
+
+* Create label with coefficient and stars
+gen str20 label = string(coef, "%5.3f") + sig
+
+list
+
+* Export to CSV
+export delimited using "mi_clpm_cci_coefs_2025.csv", replace
+
+* Get fully standardized cross-lagged paths
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+drop if cci_tot == .
+est restore clpm_cci
+preserve
+mi extract 0, clear
+summarize gds15
+local sd_gds15   = r(sd)
+local mean_gds15 = r(mean)
+summarize cci_tot
+local sd_cci_tot   = r(sd)
+local mean_cci_tot = r(mean)
+summarize L_gds15
+local sd_Lgds15 = r(sd)
+summarize L_cci_tot
+local sd_Lcci_tot = r(sd)
+di "SD gds15:     " `sd_gds15'
+di "SD cci_tot:   " `sd_cci_tot'
+di "SD L_gds15:   " `sd_Lgds15'
+di "SD L_cci_tot: " `sd_Lcci_tot'
+
+restore
+est restore clpm_cci
+local b_cci_to_gds = _b[gds15:L_cci_tot]
+local b_gds_to_cci = _b[cci_tot:L_gds15]
+local se_cci_to_gds = _se[gds15:L_cci_tot]
+local se_gds_to_cci = _se[cci_tot:L_gds15]
+di "Raw b  CCI->GDS: " `b_cci_to_gds'
+di "Raw b  GDS->CCI: " `b_gds_to_cci'
+
+local b_std_cci_to_gds = `b_cci_to_gds' * `sd_Lcci_tot' / `sd_gds15'
+local b_std_gds_to_cci = `b_gds_to_cci' * `sd_Lgds15'  / `sd_cci_tot'
+local se_std_cci_to_gds = `se_cci_to_gds' * `sd_Lcci_tot' / `sd_gds15'
+local se_std_gds_to_cci = `se_gds_to_cci' * `sd_Lgds15'  / `sd_cci_tot'
+di `b_std_cci_to_gds'
+di `b_std_gds_to_cci'
+
+/*
+di `b_std_cci_to_gds'
+.0420091
+
+. di `b_std_gds_to_cci'
+.0007861
+
+*/
+
+******************
+// CCI Informant
+*******************
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+drop if cci_inftot == .
+
+* Model with mi estimate
+mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
+		L_cci_inftot L_mocatots_sd faq_sd ///
+		/// bmi_sd ///
+		female white grade_sd ///
+		i.married i.relsubj_simple ///
+		age_base_sd time_centered_sd yrs_since_last ///
+		L_gds15 M1[id], family(poisson)) ///
+    (cci_inftot <- L_gds15 ///
+		faq_sd ///
+		/// bmi_sd ///
+		female white grade_sd ///
+		i.married i.relsubj_simple ///
+		age_base_sd time_centered_sd yrs_since_last ///
+		L_cci_inftot M2[id], family(poisson)), ///
+	cov(M1[id]*M2[id]) ///
+    latent(M1 M2) nocapslatent ///
+    difficult iterate(200) intpoints(12) technique(nr)
+
+est sto clpm_inf
+
+mibeta L_gds15 L_cci_inftot
+display sqrt(.0787856) // .28068773
+
+estimates restore clpm_inf
+
+// Extract Coefs (exponentiated for IRRs)
+* Cross-lagged: CCI → Depression
+scalar c1 = exp(_b[gds15:L_cci_inftot])
+scalar se1 = _se[gds15:L_cci_inftot]
+scalar z1 = _b[gds15:L_cci_inftot] / se1
+scalar p1 = 2 * normal(-abs(z1))
+
+* Cross-lagged: Depression → CCI
+scalar c2 = exp(_b[cci_inftot:L_gds15])
+scalar se2 = _se[cci_inftot:L_gds15]
+scalar z2 = _b[cci_inftot:L_gds15] / se2
+scalar p2 = 2 * normal(-abs(z2))
+
+* Autoregressive: Depression → Depression
+scalar c3 = exp(_b[gds15:L_gds15])
+scalar se3 = _se[gds15:L_gds15]
+scalar z3 = _b[gds15:L_gds15] / se3
+scalar p3 = 2 * normal(-abs(z3))
+
+* Autoregressive: CCI → CCI
+scalar c4 = exp(_b[cci_inftot:L_cci_inftot])
+scalar se4 = _se[cci_inftot:L_cci_inftot]
+scalar z4 = _b[cci_inftot:L_cci_inftot] / se4
+scalar p4 = 2 * normal(-abs(z4))
+
+// Path diagram with pooled estimates
+clear
+set obs 4
+gen str30 path = ""
+gen float coef = .
+gen float se = .
+gen float pvalue = .
+gen float ci_lower = .
+gen float ci_upper = .
+
+* Fill in the extracted values
+replace path = "Cog_to_Dep" in 1
+replace coef = c1 in 1
+replace se = se1 in 1
+replace pvalue = p1 in 1
+replace ci_lower = exp(_b[gds15:L_cci_inftot] - 1.96*se1) in 1
+replace ci_upper = exp(_b[gds15:L_cci_inftot] + 1.96*se1) in 1
+
+replace path = "Dep_to_Cog" in 2
+replace coef = c2 in 2
+replace se = se2 in 2
+replace pvalue = p2 in 2
+replace ci_lower = exp(_b[cci_inftot:L_gds15] - 1.96*se2) in 2
+replace ci_upper = exp(_b[cci_inftot:L_gds15] + 1.96*se2) in 2
+
+replace path = "Dep_to_Dep" in 3
+replace coef = c3 in 3
+replace se = se3 in 3
+replace pvalue = p3 in 3
+replace ci_lower = exp(_b[gds15:L_gds15] - 1.96*se3) in 3
+replace ci_upper = exp(_b[gds15:L_gds15] + 1.96*se3) in 3
+
+replace path = "Cog_to_Cog" in 4
+replace coef = c4 in 4
+replace se = se4 in 4
+replace pvalue = p4 in 4
+replace ci_lower = exp(_b[cci_inftot:L_cci_inftot] - 1.96*se4) in 4
+replace ci_upper = exp(_b[cci_inftot:L_cci_inftot] + 1.96*se4) in 4
+
+* Add significance stars
+gen str5 sig = ""
+replace sig = "***" if pvalue < 0.001
+replace sig = "**" if pvalue < 0.01 & pvalue >= 0.001
+replace sig = "*" if pvalue < 0.05 & pvalue >= 0.01
+
+* Create label with coefficient and stars
+gen str20 label = string(coef, "%5.3f") + sig
+
+list
+
+* Export to CSV
+export delimited using "mi_clpm_inf_coefs_2025.csv", replace
+
+			
+******************
+// Diagnosis
+*******************
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+drop if MCIdem_iadc == .
+
+* Model with mi estimate
+mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
+		L_cci_inftot L_mocatots_sd faq_sd ///
+		/// bmi_sd ///
+		female white grade_sd ///
+		i.married i.relsubj_simple ///
+		age_base_sd time_centered_sd yrs_since_last ///
+		L_gds15 M1[id], family(poisson)) ///
+    (MCIdem_iadc <- L_gds15 ///
+		faq_sd ///
+		/// bmi_sd ///
+		female white grade_sd ///
+		 i.married i.relsubj_simple ///
+		age_base_sd time_centered_sd yrs_since_last ///
+		L_MCIdem_iadc M2[id], family(bernoulli)), ///
+    cov(M1[id]*M2[id]) ///
+    latent(M1 M2) nocapslatent ///
+    difficult iterate(200) intpoints(12) technique(nr)
+est sto clpm_diag
+
+/*
+matrix b0 = e(b)
+preserve
+keep if yrs_since_last >= 0.5 & yrs_since_last <= 1.5
+mi estimate, cmdok post dots: gsem (gds15 <- L_cci_tot ///
+		L_cci_inftot L_mocatots_sd L_MCIdem_iadc ///
+		time_centered_sd age_base_sd female white grade_sd faq_sd ///
+		/// bmi_sd ///
+		i.married ///
+		L_gds15 M1[id], family(poisson)) ///
+    (MCIdem_iadc <- L_gds15 ///
+		time_centered_sd age_base_sd female white grade_sd faq_sd ///
+		/// bmi_sd ///
+		i.married i.apoe ///
+		L_MCIdem_iadc M2[id], family(bernoulli)), ///
+    latent(M1 M2) nocapslatent ///
+    from(b0, skip) difficult iterate(200) intpoints(12) technique(nr)
+restore
+*/
+
+mibeta L_gds15 L_MCIdem_iadc
+display sqrt(.0575179) // .2398289
+
+estimates restore clpm_diag
+
+// Extract Coefs (exponentiated for IRRs/ORs)
+* Cross-lagged: Diagnosis → Depression
+scalar c1 = exp(_b[gds15:L_MCIdem_iadc])
+scalar se1 = _se[gds15:L_MCIdem_iadc]
+scalar z1 = _b[gds15:L_MCIdem_iadc] / se1
+scalar p1 = 2 * normal(-abs(z1))
+
+* Cross-lagged: Depression → Diagnosis
+scalar c2 = exp(_b[MCIdem_iadc:L_gds15])
+scalar se2 = _se[MCIdem_iadc:L_gds15]
+scalar z2 = _b[MCIdem_iadc:L_gds15] / se2
+scalar p2 = 2 * normal(-abs(z2))
+
+* Autoregressive: Depression → Depression
+scalar c3 = exp(_b[gds15:L_gds15])
+scalar se3 = _se[gds15:L_gds15]
+scalar z3 = _b[gds15:L_gds15] / se3
+scalar p3 = 2 * normal(-abs(z3))
+
+* Autoregressive: Diagnosis → Diagnosis
+scalar c4 = exp(_b[MCIdem_iadc:L_MCIdem_iadc])
+scalar se4 = _se[MCIdem_iadc:L_MCIdem_iadc]
+scalar z4 = _b[MCIdem_iadc:L_MCIdem_iadc] / se4
+scalar p4 = 2 * normal(-abs(z4))
+
+// Path diagram with pooled estimates
+clear
+set obs 4
+gen str30 path = ""
+gen float coef = .
+gen float se = .
+gen float pvalue = .
+gen float ci_lower = .
+gen float ci_upper = .
+
+* Fill in the extracted values
+replace path = "Cog_to_Dep" in 1
+replace coef = c1 in 1
+replace se = se1 in 1
+replace pvalue = p1 in 1
+replace ci_lower = exp(_b[gds15:L_MCIdem_iadc] - 1.96*se1) in 1
+replace ci_upper = exp(_b[gds15:L_MCIdem_iadc] + 1.96*se1) in 1
+
+replace path = "Dep_to_Cog" in 2
+replace coef = c2 in 2
+replace se = se2 in 2
+replace pvalue = p2 in 2
+replace ci_lower = exp(_b[MCIdem_iadc:L_gds15] - 1.96*se2) in 2
+replace ci_upper = exp(_b[MCIdem_iadc:L_gds15] + 1.96*se2) in 2
+
+replace path = "Dep_to_Dep" in 3
+replace coef = c3 in 3
+replace se = se3 in 3
+replace pvalue = p3 in 3
+replace ci_lower = exp(_b[gds15:L_gds15] - 1.96*se3) in 3
+replace ci_upper = exp(_b[gds15:L_gds15] + 1.96*se3) in 3
+
+replace path = "Cog_to_Cog" in 4
+replace coef = c4 in 4
+replace se = se4 in 4
+replace pvalue = p4 in 4
+replace ci_lower = exp(_b[MCIdem_iadc:L_MCIdem_iadc] - 1.96*se4) in 4
+replace ci_upper = exp(_b[MCIdem_iadc:L_MCIdem_iadc] + 1.96*se4) in 4
+
+* Add significance stars
+gen str5 sig = ""
+replace sig = "***" if pvalue < 0.001
+replace sig = "**" if pvalue < 0.01 & pvalue >= 0.001
+replace sig = "*" if pvalue < 0.05 & pvalue >= 0.01
+
+* Create label with coefficient and stars
+gen str20 label = string(coef, "%5.3f") + sig
+
+list
+
+* Export to CSV
+export delimited using "mi_clpm_MCIdem_coefs_2025.csv", replace			
+		
+
+******************
+// MoCA
+*******************
+use "mi20_iadc-long-recoded_2025.dta", clear
+drop if gds15 == .
+drop if mocatots_sd == .
+
+* Model with mi estimate
+mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
+		L_cci_inftot L_mocatots_sd faq_sd ///
+		/// bmi_sd ///
+		female white grade_sd ///
+		i.married i.relsubj_simple ///
+		age_base_sd time_centered_sd yrs_since_last ///
+		L_gds15 M1[id], family(poisson)) ///
+    (mocatots_sd <- L_gds15 faq_sd ///
+		/// bmi_sd ///
+		female white grade_sd ///
+		i.married i.relsubj_simple ///
+		age_base_sd time_centered_sd yrs_since_last ///
+		L_mocatots_sd M2[id], family(gaussian)), ///
+    cov(M1[id]*M2[id]) ///
+    latent(M1 M2) nocapslatent ///
+    difficult iterate(400) technique(nr) nrtolerance(1e-4)
+
+est sto clpm_moca
+
+mibeta L_gds15 L_mocatots_sd
+display sqrt(.0611067) // .24719769
+
+estimates restore clpm_moca
+
+// Extract Coefs (raw coefficients for continuous outcome)
+* Cross-lagged: MoCA → Depression
+scalar c1 = exp(_b[gds15:L_mocatots_sd])
+scalar se1 = _se[gds15:L_mocatots_sd]
+scalar z1 = _b[gds15:L_mocatots_sd] / se1
+scalar p1 = 2 * normal(-abs(z1))
+
+* Cross-lagged: Depression → MoCA (raw coefficient, not IRR)
+scalar c2 = _b[mocatots_sd:L_gds15]
+scalar se2 = _se[mocatots_sd:L_gds15]
+scalar z2 = c2 / se2
+scalar p2 = 2 * normal(-abs(z2))
+
+* Autoregressive: Depression → Depression
+scalar c3 = exp(_b[gds15:L_gds15])
+scalar se3 = _se[gds15:L_gds15]
+scalar z3 = _b[gds15:L_gds15] / se3
+scalar p3 = 2 * normal(-abs(z3))
+
+* Autoregressive: MoCA → MoCA (raw coefficient, not IRR)
+scalar c4 = _b[mocatots_sd:L_mocatots_sd]
+scalar se4 = _se[mocatots_sd:L_mocatots_sd]
+scalar z4 = c4 / se4
+scalar p4 = 2 * normal(-abs(z4))
+
+// Path diagram with pooled estimates
+clear
+set obs 4
+gen str30 path = ""
+gen float coef = .
+gen float se = .
+gen float pvalue = .
+gen float ci_lower = .
+gen float ci_upper = .
+
+* Fill in the extracted values
+replace path = "Cog_to_Dep" in 1
+replace coef = c1 in 1
+replace se = se1 in 1
+replace pvalue = p1 in 1
+replace ci_lower = exp(_b[gds15:L_mocatots_sd] - 1.96*se1) in 1
+replace ci_upper = exp(_b[gds15:L_mocatots_sd] + 1.96*se1) in 1
+
+replace path = "Dep_to_Cog" in 2
+replace coef = c2 in 2
+replace se = se2 in 2
+replace pvalue = p2 in 2
+replace ci_lower = c2 - 1.96*se2 in 2
+replace ci_upper = c2 + 1.96*se2 in 2
+
+replace path = "Dep_to_Dep" in 3
+replace coef = c3 in 3
+replace se = se3 in 3
+replace pvalue = p3 in 3
+replace ci_lower = exp(_b[gds15:L_gds15] - 1.96*se3) in 3
+replace ci_upper = exp(_b[gds15:L_gds15] + 1.96*se3) in 3
+
+replace path = "Cog_to_Cog" in 4
+replace coef = c4 in 4
+replace se = se4 in 4
+replace pvalue = p4 in 4
+replace ci_lower = c4 - 1.96*se4 in 4
+replace ci_upper = c4 + 1.96*se4 in 4
+
+* Add significance stars
+gen str5 sig = ""
+replace sig = "***" if pvalue < 0.001
+replace sig = "**" if pvalue < 0.01 & pvalue >= 0.001
+replace sig = "*" if pvalue < 0.05 & pvalue >= 0.01
+
+* Create label with coefficient and stars
+gen str20 label = string(coef, "%5.3f") + sig
+
+list
+
+* Export to CSV
+export delimited using "mi_clpm_moca_coefs_2025.csv", replace		
+
+
+*****
+* Table
+
+esttab clpm_diag clpm_cci clpm_inf clpm_moca using "../Tables/mi_CLPM-main-results_2025.rtf", ///
+    replace ///
+    eform ///
+    b(%9.3f) se(%9.3f) ///
+    star(* 0.05 ** 0.01 *** 0.001) ///
+    title("Table: Estimates From Multilevel CLPM for GDS-15 and Cognitive Indicators") ///
+    mtitles("Model 1" "Model 2" "Model 3" "Model 4") ///
+    label ///
+    addnote("Note: Poisson for GDS15, CCI, and CCI Informant. Logistic regression for diagnosis. Linear regression for MoCA.")
