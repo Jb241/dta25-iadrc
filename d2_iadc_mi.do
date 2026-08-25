@@ -14,52 +14,70 @@ set seed 23414
 
 * MICE set up
 mi set wide
-mi register regular yrs_since0_sd age_base_sd female grade_sd MCIdem_iadc
-mi register imputed cci_tot_sd L_cci_tot_sd cci_inftot_sd L_cci_inftot_sd ///
+mi register regular years_since0_sd age_base_sd female grade_sd MCIdem_iadc
+mi register imputed white cci_tot_sd L_cci_tot_sd cci_inftot_sd L_cci_inftot_sd ///
 					L_MCIdem_iadc mocatots_sd L_mocatots_sd gds15 L_gds15 ///
 					bmi_sd memwors_bi pastdep famfreq visitfreq mastery1 mastery2 ///
 					relsubj_simple married faq_sd craftdre_sd reydecorab_sd trailbtime_sd
 
-local nolagomit L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15
-local cciomit L_MCIdem_iadc L_cci_inftot_sd L_mocatots_sd L_gds15
-local infomit L_MCIdem_iadc L_cci_tot_sd L_mocatots_sd L_gds15
-local mocaomit L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_gds15
-local gdsomit L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd
+local nolagomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15
+local cciomit i.L_MCIdem_iadc L_cci_inftot_sd L_mocatots_sd L_gds15
+local infomit i.L_MCIdem_iadc L_cci_tot_sd L_mocatots_sd L_gds15
+local mocaomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_gds15
+local gdsomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd
 local Lcciomit MCIdem_iadc cci_inftot_sd mocatots_sd gds15
 local Linfomit MCIdem_iadc cci_tot_sd mocatots_sd gds15
 local Lmocaomit MCIdem_iadc cci_tot_sd cci_inftot_sd gds15
 local Lgdsomit MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd
 local LMCIomit cci_tot_sd cci_inftot_sd mocatots_sd gds15
 
+* Dry run
+mi impute chained /// 
+	(regress) bmi_sd ///
+	(logit) memwors_bi pastdep white ///
+	(ologit) famfreq visitfreq mastery1 mastery2 ///
+	(mlogit) relsubj_simple married ///
+	(pmm, knn(5)) faq_sd craftdre_sd reydecorab_sd trailbtime_sd ///
+	(pmm, knn(5)) cci_tot_sd ///
+	(pmm, knn(5)) cci_inftot_sd ///
+	(pmm, knn(5)) mocatots_sd ///
+	(pmm, knn(5)) gds15 ///
+	(pmm, knn(5)) L_cci_tot_sd ///
+	(pmm, knn(5)) L_cci_inftot_sd ///
+	(pmm, knn(5)) L_mocatots_sd ///
+	(pmm, knn(5)) L_gds15 ///
+	(logit) L_MCIdem_iadc ///
+	= years_since0_sd age_base_sd female grade_sd MCIdem_iadc, rseed(23414) dryrun
+	
 * MICE (n=20)
 mi impute chained /// 
-	(regress, omit(`nolagomit') bmi_sd) ///
-	(logit, omit(`nolagomit') memwors_bi pastdep white) ///
-	(ologit, omit(`nolagomit') i.famfreq i.visitfreq i.mastery1 i.mastery2) ///
-	(mlogit, omit(`nolagomit') i.relsubj_simple i.married) ///
-	(pmm, knn(5) omit(`nolagomit') faq_sd craftdre_sd reydecorab_sd trailbtime_sd) ///
-	(pmm, knn(5) omit(`cciomit') cci_tot_sd) ///
-	(pmm, knn(5) omit(`infomit') cci_inftot_sd) ///
-	(pmm, knn(5) omit(`mocaomit') mocatots_sd) ///
-	(pmm, knn(5) omit(`gdsomit') gds15) ///
-	(pmm, knn(5) omit(`Lcciomit') L_cci_tot_sd) ///
-	(pmm, knn(5) omit(`Linfomit') L_cci_inftot_sd) ///
-	(pmm, knn(5) omit(`Lmocaomit') L_mocatots_sd) ///
-	(pmm, knn(5) omit(`Lgdsomit') L_gds15) ///
-	(logit, omit(`LMCIomit') L_MCIdem_iadc) ///
-	= yrs_since0 age_base_sd female grade_sd MCIdem_iadc, rseed(23414) add(20)
+	(regress, omit(`nolagomit')) bmi_sd ///
+	(logit, omit(`nolagomit') augment) memwors_bi pastdep white ///
+	(ologit, omit(`nolagomit') augment) famfreq visitfreq mastery1 mastery2 ///
+	(mlogit, omit(`nolagomit') augment) relsubj_simple married ///
+	(pmm, knn(5) omit(`nolagomit')) faq_sd craftdre_sd reydecorab_sd trailbtime_sd ///
+	(pmm, knn(5) omit(`cciomit')) cci_tot_sd ///
+	(pmm, knn(5) omit(`infomit')) cci_inftot_sd ///
+	(pmm, knn(5) omit(`mocaomit')) mocatots_sd ///
+	(pmm, knn(5) omit(`gdsomit')) gds15 ///
+	(pmm, knn(5) omit(`Lcciomit')) L_cci_tot_sd ///
+	(pmm, knn(5) omit(`Linfomit')) L_cci_inftot_sd ///
+	(pmm, knn(5) omit(`Lmocaomit')) L_mocatots_sd ///
+	(pmm, knn(5) omit(`Lgdsomit')) L_gds15 ///
+	(logit, omit(`LMCIomit') augment) L_MCIdem_iadc ///
+	= years_since0_sd age_base_sd female grade_sd MCIdem_iadc, rseed(23414) dots add(20)
 
-save "../Dta25 Data/mi_iadc_dta25.dta", replace
+save "../Dta25 Data/raw and intermediate/mi_iadc_dta25.dta", replace
 
 ********************************************************************************	
 // Passive Recodes
 
 					
 * Collect locals of original means/SDs
-use "iadc-long_2025.dta", clear
+use "../Dta25 Data/iadc_dta25.dta", clear
 set seed 23414
 local vars_to_unstandardize age_base grade cci_tot cci_inftot ///
-	mocatots bmi faq craftdre reydecorab trailbtime yrs_since0
+	mocatots bmi faq craftdre reydecorab trailbtime years_since0
 foreach var of local vars_to_unstandardize {
     qui sum `var'
     local `var'_mean = r(mean)
@@ -67,10 +85,10 @@ foreach var of local vars_to_unstandardize {
 }
 
 * Drop lagged and opposite standardized versions of vars
-use "mi_iadc_dta25.dta", clear
+use "../Dta25 Data/raw and intermediate/mi_iadc_dta25.dta", clear
 qui mi xeq: drop L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
 	cci_tot cci_inftot mocatots bmi reydecorab craftdre trailbtime ///
-	age_base faq grade yrs_since0
+	age_base faq grade years_since0
 
 mi xtset id wave
 
@@ -85,7 +103,7 @@ qui mi passive: gen trailbtime = trailbtime_sd * `trailbtime_sd' + `trailbtime_m
 qui mi passive: gen age_base = age_base_sd * `age_base_sd' + `age_base_mean'
 qui mi passive: gen faq = faq_sd * `faq_sd' + `faq_mean'
 qui mi passive: gen grade = grade_sd * `grade_sd' + `grade_mean'
-qui mi passive: gen yrs_since0 = yrs_since0_sd * `yrs_since0_sd' + `yrs_since0_mean'
+qui mi passive: gen years_since0 = years_since0_sd * `years_since0_sd' + `years_since0_mean'
 
 * Recreate binary varirables
 qui mi passive: gen dep15_f2 = (gds15 >= 5)
@@ -133,7 +151,7 @@ label var L_cci_inftot_sd "Lagged Informant CCI (SD)"
 label var L_cci_tot_sd "Lagged CCI (SD)"
 label var L_mocatots_sd "Lagged MoCA (SD)"
 label var L_gds15 "Lagged GDS-15"
-label var yrs_since0 "Years since 1st visit"
+label var years_since0 "Years since 1st visit"
 label var age_base_sd "Age at 1st visit (SD)"
 label var grade_sd "Years of education (SD)"
 label var cci_tot_sd "CCI (SD)"
@@ -147,6 +165,6 @@ label var trailbtime_sd "Trails-B time (SD)"
 
 ********************************************************************************	
 // Save
-save "mi_iadc_dta25_recoded.dta", replace
+save "../Dta15 Data/mi_iadc_dta25_recoded.dta", replace
 
 

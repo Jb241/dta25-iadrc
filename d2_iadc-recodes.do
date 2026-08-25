@@ -59,13 +59,6 @@ label var gds15 "Geriatric Depression Scale-15"
 by study_year, sort: count if missing(gds15)
 by study_year, sort: count if !missing(gds15) // nothing before 2006
 
-* Clinical depression
-gen dep15_f2 = .
-replace dep15_f2 = 1 if gds15 >= 5
-replace dep15_f2 = 0 if gds15 < 5
-tab dep15_f2, m // 634 observations with clinical depression ()
-distinct id if dep15_f2 == 1 // 241 participants with at least one wave of clinical depression
-
 ************
 // IVs
 
@@ -127,7 +120,6 @@ label define MCIdemlbl 0 "Normal" 1 "MCI/Dementia" 99 "To drop: MBI/impaired"
 label val MCIdem_iadc MCIdemlbl
 label var MCIdem_iadc "Diagnosis (1=MCI/Dementia)"
 
-
 ************
 // Time-varying controls
 
@@ -180,7 +172,7 @@ gen visitdate_s = date(visitdate, "YMD")
 format visitdate_s %td
 keep id visitdate_s bmi
 merge 1:1 id visitdate_s using "../Dta25 Data/raw and intermediate/iadc25_longitudinal_p1.dta"
-drop if _merge == 1 
+keep if _merge == 3
 * 114 obs in 2026 data not in 2025 data
 drop _merge
 label var bmi "BMI"
@@ -238,8 +230,8 @@ label var female "Sex 1=Female"
 label var grade "Highest grade education completed"
 
 * Race
-tab race // 1 = white, 2 = black, 5 = ?, 50 = ?
-tab hispanic // 0 = not, 1 = yes
+tab race, m // 1 = white, 2 = black, 5 = other(?) (n=2), 50 = missing(?) (n=4)
+tab hispanic, m // 0 = not, 1 = yes
 gen white = .
 replace white = 1 if race == 1 & hispanic == 0
 replace white = 0 if race == 2 | race == 5 | hispanic == 1
@@ -250,7 +242,7 @@ label var white "Race 1=white"
 * APOE
 tab apoegenotype
 recode apoegenotype (22 23 33 = 0 "No E4") (24 34 = 1 "Hetero E4") (44 = 2 "Homo E4"), gen(apoe)
-label var apoegenotype "APOE genotype"
+label var apoe "APOE genotype"
 
 * Deal with one repeated row
 duplicates drop
@@ -266,6 +258,9 @@ save "../Dta25 Data/raw and intermediate/iadc-cross-sectional-recoded.dta", repl
 ************************************************************************
 
 merge 1:m id using "../Dta25 Data/raw and intermediate/iadc-longitud-recoded.dta"
+* 149 in cross-sectional data not found in longitudinal data, not sure why - i think this is the issue of them being in 2024 data but not in 2025 data for some reason
+keep if _merge == 3
+
 
 ************
 // Final merged recodes
@@ -319,6 +314,7 @@ misstable summarize gds15 MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd ///
 
 drop if years_since0_sd == . // remove 149 observations where this is missing (no date for visit)
 drop if MCIdem_iadc == 99 // remove 56 observations where diagnosis is MBI no MCI (not relevant)
+drop if L_MCIdem_iadc == 99
 	
 misstable summarize	years_since0_sd age_base_sd female grade_sd
 
