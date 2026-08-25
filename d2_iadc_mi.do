@@ -7,213 +7,43 @@
 use "../Dta25 Data/iadc_dta25.dta", clear
 set seed 23414
 
-drop if cci_tot < 20
-drop if gds15 > 15 & gds15 !=. // people with "88" as value ??
-drop if female == . // this is one person with only 1 wave
-
-sum id
-codebook id
-
-misstable summarize gds15 MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd ///
-	time_centered_sd age_base_sd faq_sd female white grade_sd married ///
-	relsubj_simple mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-	days_since_last 
-	/// bmi_sd
 
 * MICE set up
 mi set wide
-mi register imputed cci_tot_sd cci_inftot_sd mocatots_sd MCIdem_iadc ///
-	L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_MCIdem_iadc ///
-	/// bmi_sd ///
-	married ///
-	gds15 L_gds15 ///
-	reydecorab_sd craftdre_sd trailbtime_sd ///
-	L_reydecorab_sd L_craftdre_sd L_trailbtime_sd ///
-	mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-	L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-	/// pastdep ///
-	memwors_bi L_memwors_bi yrs_since_last relsubj_simple
-mi register regular time_centered_sd age_base_sd faq_sd female white grade_sd
+mi register regular yrs_since0 age_base_sd female grade_sd MCIdem_iadc
+mi register imputed cci_tot_sd L_cci_tot_sd cci_inftot_sd L_cci_inftot_sd ///
+					L_MCIdem_iadc mocatots_sd L_mocatots_sd gds15 L_gds15 ///
+					bmi memwors_bi pastdep famfreq visitfreq mastery1 mastery2 ///
+					relsubj_simple married faq craftdre reydecorab trailbtime
 
-* Dry run	
-mi impute chained /// (regress, omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-					///	L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd ///
-					///	L_visitors_f_sd L_famfriends_f_sd i.L_memwors_bi)) bmi_sd ///
-	/// (logit, augment omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		///	L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		///	i.L_memwors_bi)) pastdep ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) married yrs_since_last relsubj_simple ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) gds15 ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd mocatots_sd ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_gds15 ///
-	(logit, augment omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_MCIdem_iadc ///	
-	(logit, omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		)) memwors_bi ///
-	(logit, omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		)) L_memwors_bi ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) mocatots_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_mocatots_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) cci_tot_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_cci_tot_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) cci_inftot_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_cci_inftot_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) trailbtime_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_trailbtime_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) craftdre_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_craftdre_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) reydecorab_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_reydecorab_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) mastery1_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_mastery1_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) mastery2_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_mastery2_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) visitors_f_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd famfriends_f_sd ///
-		i.memwors_bi)) L_visitors_f_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd ///
-		i.L_memwors_bi)) famfriends_f_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd ///
-		i.memwors_bi)) L_famfriends_f_sd ///
-	(logit, augment omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) MCIdem_iadc ///
-	= time_centered_sd age_base_sd faq_sd female white grade_sd, rseed(23414) dryrun
-	
-* Real initial imputation step
-mi impute chained /// (regress, omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-					///	L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd ///
-					///	L_visitors_f_sd L_famfriends_f_sd i.L_memwors_bi)) bmi_sd ///
-	/// (logit, augment omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		///	L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		///	i.L_memwors_bi)) pastdep ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) married yrs_since_last relsubj_simple ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) gds15 ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd mocatots_sd ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_gds15 ///
-	(logit, omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		)) memwors_bi ///
-	(logit, omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		)) L_memwors_bi ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_cci_tot_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) mocatots_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd cci_tot_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_mocatots_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) cci_tot_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_cci_tot_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) cci_inftot_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_cci_inftot_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) trailbtime_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_trailbtime_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) craftdre_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_craftdre_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) reydecorab_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_reydecorab_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) mastery1_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_mastery1_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) mastery2_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_mastery2_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) visitors_f_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd famfriends_f_sd ///
-		i.memwors_bi)) L_visitors_f_sd ///
-	(pmm, knn(5) omit(i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd ///
-		i.L_memwors_bi)) famfriends_f_sd ///
-	(pmm, knn(5) omit(i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd ///
-		i.memwors_bi)) L_famfriends_f_sd ///
-	(logit, augment omit(cci_inftot_sd cci_tot_sd mocatots_sd gds15 ///
-		trailbtime_sd craftdre_sd reydecorab_sd mastery1_sd mastery2_sd visitors_f_sd famfriends_f_sd ///
-		i.memwors_bi)) L_MCIdem_iadc ///	
-	(logit, augment omit(L_cci_inftot_sd L_cci_tot_sd L_mocatots_sd L_gds15 ///
-		L_trailbtime_sd L_craftdre_sd L_reydecorab_sd L_mastery1_sd L_mastery2_sd L_visitors_f_sd L_famfriends_f_sd ///
-		i.L_memwors_bi)) MCIdem_iadc ///
-	= time_centered_sd age_base_sd faq_sd female white grade_sd, rseed(23414) add(20) force
+local nolagomit L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15
+local cciomit L_MCIdem_iadc L_cci_inftot_sd L_mocatots_sd L_gds15
+local infomit L_MCIdem_iadc L_cci_tot_sd L_mocatots_sd L_gds15
+local mocaomit L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_gds15
+local gdsomit L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd
+local Lcciomit MCIdem_iadc cci_inftot_sd mocatots_sd gds15
+local Linfomit MCIdem_iadc cci_tot_sd mocatots_sd gds15
+local Lmocaomit MCIdem_iadc cci_tot_sd cci_inftot_sd gds15
+local Lgdsomit MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd
+local LMCIomit cci_tot_sd cci_inftot_sd mocatots_sd gds15
+
+* MICE (n=20)
+mi impute chained /// 
+	(regress, omit(`nolagomit') bmi) ///
+	(logit, omit(`nolagomit') memwors_bi pastdep white) ///
+	(ologit, omit(`nolagomit') i.famfreq i.visitfreq i.mastery1 i.mastery2) ///
+	(mlogit, omit(`nolagomit') i.relsubj_simple i.married) ///
+	(pmm, knn(5) omit(`nolagomit') faq_sd craftdre_sd reydecorab_sd trailbtime_sd) ///
+	(pmm, knn(5) omit(`cciomit') cci_tot_sd) ///
+	(pmm, knn(5) omit(`infomit') cci_inftot_sd) ///
+	(pmm, knn(5) omit(`mocaomit') mocatots_sd) ///
+	(pmm, knn(5) omit(`gdsomit') gds15) ///
+	(pmm, knn(5) omit(`Lcciomit') L_cci_tot_sd) ///
+	(pmm, knn(5) omit(`Linfomit') L_cci_inftot_sd) ///
+	(pmm, knn(5) omit(`Lmocaomit') L_mocatots_sd) ///
+	(pmm, knn(5) omit(`Lgdsomit') L_gds15) ///
+	(logit, omit(`LMCIomit') L_MCIdem_iadc) ///
+	= yrs_since0 age_base_sd female grade_sd MCIdem_iadc, rseed(23414) add(20)
 
 save "mi20_iadc-long_2025.dta", replace
 
