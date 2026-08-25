@@ -15,7 +15,7 @@ import excel "../Dta25 Data/raw and intermediate/IADC_clinical_2025-12-05.xlsx",
 // Organizational
 
 *ID
-codebook subid // 581 people with multiple waves
+codebook subid // 574 people with multiple waves
 gen id = subid
 label var id "Respondent ID"
 
@@ -54,6 +54,7 @@ label values decade decade_lbl
 ************
 // DV
 codebook gds15
+replace gds15 = . if gds15 == 88
 label var gds15 "Geriatric Depression Scale-15"
 by study_year, sort: count if missing(gds15)
 by study_year, sort: count if !missing(gds15) // nothing before 2006
@@ -63,7 +64,7 @@ gen dep15_f2 = .
 replace dep15_f2 = 1 if gds15 >= 5
 replace dep15_f2 = 0 if gds15 < 5
 tab dep15_f2, m // 634 observations with clinical depression ()
-distinct id if dep15_f2 == 1 // 236 participants with at least one wave of clinical depression
+distinct id if dep15_f2 == 1 // 241 participants with at least one wave of clinical depression
 
 ************
 // IVs
@@ -280,7 +281,7 @@ bysort id (visitdate_s): gen age_base = ageatvisit[1]
 label var age_base "Age at baseline (years)"
 
 ************
-// Standardize everything
+// Standardize every continuous variable
 local varlist gds15 cci_tot cci_inftot mocatots ///
 	age_base grade faq bmi ///
 	craftdre trailbtime reydecorab years_since0
@@ -315,19 +316,12 @@ misstable summarize gds15 MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd ///
 	years_since0_sd age_base_sd faq_sd female white grade_sd married ///
 	relsubj_simple mastery1 mastery2 visitfreq famfreq  ///
 	yrs_since_last bmi_sd pastdep
-	
-drop if years_since0_sd == .
-drop if female == .
-drop if white == .
-drop if MCIdem_iadc == 99
 
-misstable summarize gds15 MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd ///
-	years_since0_sd age_base_sd faq_sd female white grade_sd married ///
-	relsubj_simple mastery1 mastery2 visitfreq famfreq  ///
-	yrs_since_last bmi_sd pastdep
+drop if years_since0_sd == . // remove 149 observations where this is missing (no date for visit)
+drop if MCIdem_iadc == 99 // remove 56 observations where diagnosis is MBI no MCI (not relevant)
 	
-misstable summarize	years_since0_sd age_base_sd female white grade_sd
+misstable summarize	years_since0_sd age_base_sd female grade_sd
 
 ************
 // Save final data set
-save "../Dta25 Data/iadc_2026_05_recoded.dta", replace
+save "../Dta25 Data/iadc_dta25.dta", replace
