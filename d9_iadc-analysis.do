@@ -558,9 +558,16 @@ nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 ********************************************************************************
 ********************************************************************************
 
+**# Bookmark #4
+********************************************************************************
+********************************************************************************
+****** Interactions
+********************************************************************************
+********************************************************************************
+
 /* Descriptive combinations
 
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
 mi xtset id wave
 
@@ -588,39 +595,33 @@ mi estimate: mean gds15, over(diag_x_inf_bi)
 
 mi estimate, eform cmdok post: mepoisson gds15 ///
 	i.cci_x_inf_bi MCIdem_iadc mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	/// bmi_sd ///
-	yrs_since_last i.married ///
+    years_since0_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married ///
     || id:, irr iterate(400) intpoints(12) 
 mi estimate, eform cmdok post: mepoisson gds15 ///
 	i.cci_x_diag_bi cci_inftot_sd mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	/// bmi_sd ///
-	yrs_since_last i.married ///
+    years_since0_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married ///
     || id:, irr iterate(400) intpoints(12) 
 mi estimate, eform cmdok post: mepoisson gds15 ///
 	i.diag_x_inf_bi cci_tot_sd mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	/// bmi_sd ///
-	yrs_since_last i.married ///
+    years_since0_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married ///
     || id:, irr iterate(400) intpoints(12) 
 */
 
 **********************
 * Diagnosis x CCI
 
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
 mi xtset id wave
 
-* binary:  p=0.318
-
 mi estimate, eform cmdok post: mepoisson gds15 ///
 	i.MCIdem_iadc##c.cci_tot_sd cci_inftot_sd mocatots_sd faq_sd ///
-	/// bmi_sd /// 
-    female white grade_sd  ///
+	bmi_sd female white grade_sd  ///
 	i.married  i.relsubj_simple ///
-	age_base_sd time_centered_sd    ///
+	age_base_sd years_since0_sd    ///
     || id:, irr iterate(400) intpoints(12) 
 est sto m_int_diag
 
@@ -629,7 +630,7 @@ est sto m_int_diag
 est restore m_int_diag
 gen insample = !missing(gds15, MCIdem_iadc, cci_tot_sd, cci_inftot_sd, ///
                mocatots_sd, faq_sd, female, white, grade_sd, ///
-               married, relsubj_simple, age_base_sd, time_centered_sd)
+               married, relsubj_simple, age_base_sd, years_since0_sd, bmi_sd)
 mimrgns, dydx(MCIdem_iadc) at(cci_tot_sd=(-1.2 3.5)) predict(mu) subpop(insample) post
 matrix b = e(b_mi)
 matrix V = e(V_mi)
@@ -653,7 +654,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../Tables/mi_int-cci-diag_2025.rtf", write replace
+file open myfile using "../../Output/Stage 2 Output/Tables/raw/CCI_diagnosis_interaction.docx", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table 6: Diagnosis Marginal Effect on GDS-15 by CCI}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -719,39 +720,21 @@ marginsplot, ///
     graphregion(fcolor(white) lcolor(white) margin(medium)) ///
     plotregion(fcolor(white) lcolor(black)) ///
     xsize(5) ysize(4)
-graph export "../Figures/F5_mi_int-diag-cci-rev_2025.tif", replace
+graph export "../../Output/Stage 2 Output/Figures/F5_CCI_diagnosis_interaction.tif", replace
 	
-/*
-est restore m_int_diag
-mimrgns, at(cci_tot_sd=(-1.2(0.4)3.5) MCIdem_iadc=(0 1)) predict(mu) cmdmargins
-marginsplot, ///
-    recast(line) ///
-	recastci(rarea) ///
-    plot1opts(lcolor("49 54 149") mcolor("49 54 149") lwidth(medium)) ///
-    ci1opts(color("49 54 149%30")) ///
-    plot2opts(lcolor("215 48 39") mcolor("215 48 39") lwidth(medium)) ///
-    ci2opts(color("215 48 39%30")) ///
-    xtitle("CCI in SD (high=worried)") ///
-    ytitle("Predicted GDS15 Score") ///
-    title("Predicted GDS15 by CCI and Diagnosis") ///
-	legend(order(3 "No MCI/Dementia" 4 "MCI/Dementia") ///
-           size(small) title("MCI/dementia diagnosis", size(small)))
-graph export "../Figures/mi_int-cci-diag-twoci_2025.jpg", replace
-*/
 
 **********************	
 * Informant x CCI
 
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
 mi xtset id wave
 
 
 mi estimate, eform cmdok post: mepoisson gds15 ///
 	i.MCIdem_iadc c.cci_tot_sd##c.cci_inftot_sd c.mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	/// bmi_sd ///
-	 i.married i.relsubj_simple ///
+    years_since0_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married i.relsubj_simple ///
     || id:, irr iterate(400) intpoints(12)
 est sto m_int_inf_rel	
 
@@ -781,7 +764,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../Tables/mi_int-cci-inf_2025.rtf", write replace
+file open myfile using "../../Output/Stage 2 Output/Tables/raw/CCI_informant_interaction.docx", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table: CCI Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -845,20 +828,19 @@ marginsplot, ///
     graphregion(fcolor(white) lcolor(white) margin(medium)) ///
     plotregion(fcolor(white) lcolor(black)) ///
     xsize(6) ysize(4)         
-graph export "../Figures/F7_mi_int-cci-inf-twoci_2025.tif", replace
+graph export "../../Output/Stage 2 Output/Figures/F7_CCI_informant_interaction.tif", replace
 
 **********************	
 * Diagnosis x Informant
 
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
 mi xtset id wave
 
 mi estimate, eform cmdok post: mepoisson gds15 ///
 	c.cci_inftot_sd##i.MCIdem_iadc c.cci_tot_sd c.mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	/// bmi_sd ///
-	i.married i.relsubj_simple ///
+    years_since0_sd age_base_sd female white grade_sd faq_sd ///
+	bmi_sd i.married i.relsubj_simple ///
     || id:, irr iterate(400) intpoints(12)
 est sto m_int_inf_diag_rel	
 
@@ -888,7 +870,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../Tables/mi_int-diag-inf_2025.rtf", write replace
+file open myfile using "../../Output/Stage 2 Output/Tables/raw/diagnosis_informant_interaction.docx", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table: Diagnosis Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -970,76 +952,12 @@ marginsplot, ///
     graphregion(fcolor(white) lcolor(white) margin(medium)) ///
     plotregion(fcolor(white) lcolor(black)) ///
     xsize(5) ysize(4)
-graph export "../Figures/F6_mi_int-diag-inf-rev_2025.tif", replace
-
-	
-/**********************
-// Multiple
-
-use "mi20_iadc-long-recoded.dta", clear
-drop if yrs_since_last > 2.5 & yrs_since_last != .
-
-foreach n of numlist 1/20 {
-    replace _`n'_gds15_filled2 = . if gds15_filled2 == .
-}
-mi xtset id wave
-save "mi20_iadc-long-recoded_temp.dta", replace
-mi convert flong
-mi estimate: regress gds15_filled2 ///
-	c.L_cci_tot_sd##c.L_cci_inftot_sd##i.L_MCIdem_iadc ///
-	c.L_mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	bmi_sd i.married 
-mivif
-* not great
-
-mi estimate: regress gds15_filled2 ///
-	c.L_cci_tot_sd L_cci_inftot_sd L_MCIdem_iadc ///
-	c.L_cci_tot_sd#c.L_cci_inftot_sd ///
-	c.L_cci_tot_sd#i.L_MCIdem_iadc ///
-	c.L_mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	bmi_sd i.married
-mivif	
-* not terrible
-
-mi estimate, cmdok eform post: menbreg gds15_filled2 ///
-	c.L_cci_tot_sd L_cci_inftot_sd L_MCIdem_iadc ///
-	c.L_cci_tot_sd#c.L_cci_inftot_sd ///
-	c.L_cci_tot_sd#i.L_MCIdem_iadc ///
-	c.L_mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	bmi_sd i.married ///
-    || id:, irr iterate(200) intpoints(12) 
-est sto m_int_diaginf
-	
-mi estimate, cmdok eform post: menbreg gds15_filled2 ///
-	c.L_cci_tot_sd##c.L_cci_inftot_sd##i.L_MCIdem_iadc ///
-	c.L_mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	bmi_sd i.married ///
-    || id:, irr iterate(200) intpoints(12) 
-est sto m_int_all
-
-mi estimate, cmdok eform post: menbreg gds15_filled2 ///
-	L_cci_tot_sd L_cci_inftot_sd i.L_MCIdem_iadc ///
-	c.L_cci_tot_sd#c.L_cci_inftot_sd ///
-	c.L_cci_tot_sd#i.L_MCIdem_iadc ///
-	c.L_mocatots_sd ///
-    time_centered_sd age_base_sd female white grade_sd faq_sd ///
-	bmi_sd i.married ///
-    || id:, irr iterate(200) intpoints(12) 
-est sto m_int_two
-mimrgns, dydx(L_cci_tot_sd) at(L_MCIdem_iadc=(0 1)) predict(mu) post
-mlincom 2 -1, stat(est p se)
-est restore m_int_two
-mimrgns, dydx(L_cci_tot_sd) at(L_cci_inftot_sd=(-0.85 2.2)) predict(mu) post
-mlincom 2 -1, stat(est p se)
-*/
+graph export "../../Output/Dta25 Output/Figures/F6_diagnosis_informant_interaction.tif", replace
 
 **********************
 * Focal interactions table
-esttab m_int_diag m_int_inf_diag_rel m_int_inf_rel using "../Tables/mi_focal-int-results_2025.rtf", ///
+esttab m_int_diag m_int_inf_diag_rel m_int_inf_rel ///
+	using "../../Output/Dta25 Output/Tables/raw/TA10_interaction_regression.docx", ///
     replace ///
     eform ///
     b(%9.3f) se(%9.3f) ///
@@ -1051,7 +969,7 @@ esttab m_int_diag m_int_inf_diag_rel m_int_inf_rel using "../Tables/mi_focal-int
 ********
 // Education interaction (not significant)
 
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 
 drop if gds15 == .
 mi xtset id wave
@@ -1059,17 +977,15 @@ mi xtset id wave
 
 mi estimate, cmdok eform post: mepoisson gds15 ///
 	c.cci_tot_sd##c.grade_sd MCIdem_iadc cci_inftot_sd mocatots_sd ///
-    time_centered_sd age_base_sd female white faq_sd ///
-	/// bmi_sd ///
-	i.married ///
+    years_since0_sd age_base_sd female white faq_sd ///
+	bmi_sd i.married ///
     || id:, irr iterate(200) intpoints(12) 
 est sto edint_cci
 
 mi estimate, cmdok eform post dots: mepoisson gds15 ///
 	c.cci_tot_sd i.MCIdem_iadc##c.grade_sd cci_inftot_sd mocatots_sd ///
-    time_centered_sd age_base_sd female white faq_sd ///
-	/// bmi_sd ///
-	i.married ///
+    years_since0_sd age_base_sd female white faq_sd ///
+	bmi_sd i.married ///
     || id:, irr iterate(200) intpoints(12) 
 est sto edint_diag
 	
