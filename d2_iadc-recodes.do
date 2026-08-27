@@ -128,6 +128,7 @@ label var MCIdem_iadc "Diagnosis (1=MCI/Dementia)"
 tab maristat
 recode maristat (1 6 = 1 "Married") (2 3 4 = 2 "No longer married") (5 = 3 "Never married") (9 = .), gen(married)
 tab maristat married
+label var married "Marital status (ref = Married)"
 
 * FAQ
 local faqvars bills taxes shopping games stove mealprep events payattn remdates travel
@@ -149,17 +150,33 @@ replace famfreq = . if famfriends_f==0 // 0 means no response/dk
 label val famfreq visitlbl
 label var famfreq "Visit family + friends frequency"
 
+* Mastery
+tab mastery1
+tab mastery2
+label var mastery1 "I can do just about anything I really set my mind to."
+label var mastery2 "I often feel helpless in dealing with the problems of life. "
+label define masterylbl 1 "Strongly Agree" 2 "Agree" 3 "Disagree" 4 "Strongly Disagree"
+label val mastery1 mastery2 masterylbl
+
 * Informant relation to subject
 tab relsubj, m // 1 spouse/partner, 2 child, 3 sibling, 4 other relative, 5 friend/neighbor, 6 paid caregiver
+gen relsubj_four = .
+replace relsubj_four = . if relsubj == 0 | relsubj == 7 | relsubj == 8
+replace relsubj_four = 1 if relsubj == 1 | relsubj == 2
+replace relsubj_four = 2 if relsubj == 3 | relsubj == 4
+replace relsubj_four = 3 if relsubj == 5
+replace relsubj_four = 4 if relsubj == 6
+label var relsubj_four "Informant relationship to participant"
+label define relfour_lbl 1 "Spouse or child" 2 "Other relative" 3 "Friend/neighbor" 4 "Paid caregiver"
+label val relsubj_four relfour_lbl
+
 gen relsubj_simple = .
 replace relsubj_simple = . if relsubj == 0 | relsubj == 7 | relsubj == 8
-replace relsubj_simple = 1 if relsubj == 1 | relsubj == 2
-replace relsubj_simple = 2 if relsubj == 3 | relsubj == 4
-replace relsubj_simple = 3 if relsubj == 5
-replace relsubj_simple = 4 if relsubj == 6
+replace relsubj_simple = 0 if relsubj == 1 | relsubj == 2
+replace relsubj_simple = 1 if relsubj == 3 | relsubj == 4 | relsubj == 5 | relsubj == 6
 label var relsubj_simple "Informant relationship to participant"
-label define relsubjsim_lbl 1 "Spouse or child" 2 "Other relative" 3 "Friend/neighbor" 4 "Paid caregiver"
-label val relsubj_simple relsubjsim_lbl
+label define relsubj_simplelbl 0 "Spouse or child" 1 "Other"
+label val relsubj_simple relsubj_simplelbl
 
 ************
 // Merge in BMI and depression history

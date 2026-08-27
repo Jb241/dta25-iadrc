@@ -30,31 +30,14 @@ local Linfomit MCIdem_iadc cci_tot_sd mocatots_sd gds15
 local Lmocaomit MCIdem_iadc cci_tot_sd cci_inftot_sd gds15
 local Lgdsomit MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd
 local LMCIomit cci_tot_sd cci_inftot_sd mocatots_sd gds15
-
-* Dry run
-mi impute chained /// 
-	(regress) bmi_sd ///
-	(logit) memwors_bi pastdep white ///
-	(ologit) famfreq visitfreq mastery1 mastery2 ///
-	(mlogit) relsubj_simple married ///
-	(pmm, knn(5)) faq_sd craftdre_sd reydecorab_sd trailbtime_sd ///
-	(pmm, knn(5)) cci_tot_sd ///
-	(pmm, knn(5)) cci_inftot_sd ///
-	(pmm, knn(5)) mocatots_sd ///
-	(pmm, knn(5)) gds15 ///
-	(pmm, knn(5)) L_cci_tot_sd ///
-	(pmm, knn(5)) L_cci_inftot_sd ///
-	(pmm, knn(5)) L_mocatots_sd ///
-	(pmm, knn(5)) L_gds15 ///
-	(logit) L_MCIdem_iadc ///
-	= years_since0_sd age_base_sd female grade_sd MCIdem_iadc, rseed(23414) dryrun
+local marriedomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 i.mastery1 i.famfreq
 	
 * MICE (n=20)
 mi impute chained /// 
 	(regress, omit(`nolagomit')) bmi_sd ///
-	(logit, omit(`nolagomit') augment) memwors_bi pastdep white ///
+	(logit, omit(`nolagomit') augment) memwors_bi pastdep white relsubj_simple ///
 	(ologit, omit(`nolagomit') augment) famfreq visitfreq mastery1 mastery2 ///
-	(mlogit, omit(`nolagomit') augment) relsubj_simple married ///
+	(mlogit, omit(`marriedomit') augment) married /// -- to fix convergence/perfect prediction issues
 	(pmm, knn(5) omit(`nolagomit')) faq_sd craftdre_sd reydecorab_sd trailbtime_sd ///
 	(pmm, knn(5) omit(`cciomit')) cci_tot_sd ///
 	(pmm, knn(5) omit(`infomit')) cci_inftot_sd ///
@@ -165,6 +148,6 @@ label var trailbtime_sd "Trails-B time (SD)"
 
 ********************************************************************************	
 // Save
-save "../Dta15 Data/mi_iadc_dta25_recoded.dta", replace
+save "../Dta25 Data/mi_iadc_dta25_recoded.dta", replace
 
 
