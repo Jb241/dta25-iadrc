@@ -195,7 +195,8 @@ qui mi estimate: regress gds15 ///
 	bmi_sd i.married ///
 	relsubj_simple
 mivif
-restore 
+restore
+* copied/pasted to: "../../Output/Dta25 Output/Statistics/vif.docx"
 
 * plot
 mi xeq: sum cci_tot_sd, d
@@ -428,14 +429,14 @@ mimrgns, dydx(cci_tot_sd) post predict(equation(gds15)) /// no mediators (1)
 estimates save "../../Output/Dta25 Output/Statistics/mimrgns_CCI_mediation", replace
 estimates use "../../Output/Dta25 Output/Statistics/mimrgns_CCI_mediation"
 estimates replay
-* mastery
+* mastery (p=0.014, 28.59%)
 mlincom 1 - 2, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
-* social
+* social (p=0.965, 0.43%)
 mlincom 1 - 3, stat(est se p)
 display %12.8f r(est)
 nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
-* both
+* both (p=0.014, 28.87%)
 mlincom 1 - 4, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 
@@ -448,13 +449,13 @@ mimrgns, dydx(MCIdem_iadc) post predict(equation(gds15)) /// no mediators (1)
 estimates save "../../Output/Dta25 Output/Statistics/mimrgns_diagnosis_mediation", replace
 estimates use "../../Output/Dta25 Output/Statistics/mimrgns_diagnosis_mediation"
 
-* mastery
+* mastery (p=0.926, 2.65%)
 mlincom 1 - 2, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
-* social
+* social (p=0.852, -5.37%)
 mlincom 1 - 3, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
-* both
+* both (p=0.940, -2.15%)
 mlincom 1 - 4, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 
@@ -469,7 +470,7 @@ qui mi passive: gen gds15_copy3 = gds15
 
 mi xtset id wave
 
-qui mi estimate, cmdok post dots: gsem ///
+mi estimate, cmdok post dots: gsem ///
 	/// No mediators ///
 	(gds15 <- cci_tot_sd cci_inftot_sd ///
 					MCIdem_iadc ///
@@ -498,6 +499,7 @@ qui mi estimate, cmdok post dots: gsem ///
 * does conflate within and between
 	
 estimates store both_models_re_moca
+
 esttab both_models_re_moca both_models_re_moca ///
 	both_models_re_moca both_models_re_moca using ///
 	"../../Output/Dta25 Output/Tables/raw/TA6_alternative_mediation.docx", replace ///
@@ -518,9 +520,9 @@ est restore both_models_re_moca
 mimrgns, dydx(cci_tot_sd) post predict(equation(gds15)) /// no mediators (1)
 								predict(equation(gds15_copy1)) /// adds moca (2)
 								predict(equation(gds15_copy2)) /// adds faq (3)
-								predict(equation(gds15_copy3)) /// adds both
+								predict(equation(gds15_copy3)
 estimates save "../../Output/Dta25 Output/Statistics/mimrgns_CCI_alternative_mediation", replace
-estimates use "../Output/Dta25 Output/Statistics/mimrgns_CCI_alternative_mediation"
+estimates use "../../Output/Dta25 Output/Statistics/mimrgns_CCI_alternative_mediation"
 estimates replay
 * moca
 mlincom 1 - 2, stat(est se p)
@@ -564,51 +566,6 @@ nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 ****** Interactions
 ********************************************************************************
 ********************************************************************************
-
-/* Descriptive combinations
-
-use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
-drop if gds15 == .
-mi xtset id wave
-
-mi passive: gen cci_x_inf_bi = .
-mi passive: replace cci_x_inf_bi = 0 if cci_tot_bi == 0 & cci_inftot_bi == 0
-mi passive: replace cci_x_inf_bi = 1 if cci_tot_bi == 1 & cci_inftot_bi == 0
-mi passive: replace cci_x_inf_bi = 2 if cci_tot_bi == 0 & cci_inftot_bi == 1
-mi passive: replace cci_x_inf_bi = 3 if cci_tot_bi == 1 & cci_inftot_bi == 1
-
-mi passive: gen cci_x_diag_bi = .
-mi passive: replace cci_x_diag_bi = 0 if cci_tot_bi == 0 & MCIdem_iadc == 0
-mi passive: replace cci_x_diag_bi = 1 if cci_tot_bi == 1 & MCIdem_iadc == 0
-mi passive: replace cci_x_diag_bi = 2 if cci_tot_bi == 0 & MCIdem_iadc == 1
-mi passive: replace cci_x_diag_bi = 3 if cci_tot_bi == 1 & MCIdem_iadc == 1
-
-mi passive: gen diag_x_inf_bi = .
-mi passive: replace diag_x_inf_bi = 0 if MCIdem_iadc == 0 & cci_inftot_bi == 0
-mi passive: replace diag_x_inf_bi = 1 if MCIdem_iadc == 1 & cci_inftot_bi == 0
-mi passive: replace diag_x_inf_bi = 2 if MCIdem_iadc == 0 & cci_inftot_bi == 1
-mi passive: replace diag_x_inf_bi = 3 if MCIdem_iadc == 1 & cci_inftot_bi == 1
-
-mi estimate: mean gds15, over(cci_x_inf_bi)
-mi estimate: mean gds15, over(cci_x_diag_bi)
-mi estimate: mean gds15, over(diag_x_inf_bi)
-
-mi estimate, eform cmdok post: mepoisson gds15 ///
-	i.cci_x_inf_bi MCIdem_iadc mocatots_sd ///
-    years_since0_sd age_base_sd female white grade_sd faq_sd ///
-	bmi_sd i.married ///
-    || id:, irr iterate(400) intpoints(12) 
-mi estimate, eform cmdok post: mepoisson gds15 ///
-	i.cci_x_diag_bi cci_inftot_sd mocatots_sd ///
-    years_since0_sd age_base_sd female white grade_sd faq_sd ///
-	bmi_sd i.married ///
-    || id:, irr iterate(400) intpoints(12) 
-mi estimate, eform cmdok post: mepoisson gds15 ///
-	i.diag_x_inf_bi cci_tot_sd mocatots_sd ///
-    years_since0_sd age_base_sd female white grade_sd faq_sd ///
-	bmi_sd i.married ///
-    || id:, irr iterate(400) intpoints(12) 
-*/
 
 **********************
 * Diagnosis x CCI
