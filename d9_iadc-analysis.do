@@ -654,7 +654,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../../Output/Stage 2 Output/Tables/raw/CCI_diagnosis_interaction.docx", write replace
+file open myfile using "../../Output/Dta25 Output/Tables/raw/CCI_diagnosis_interaction.docx", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table 6: Diagnosis Marginal Effect on GDS-15 by CCI}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -764,7 +764,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../../Output/Stage 2 Output/Tables/raw/CCI_informant_interaction.docx", write replace
+file open myfile using "../../Output/Dta25 Output/Tables/raw/CCI_informant_interaction.docx", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table: CCI Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -870,7 +870,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../../Output/Stage 2 Output/Tables/raw/diagnosis_informant_interaction.docx", write replace
+file open myfile using "../../Output/Dta25 Output/Tables/raw/diagnosis_informant_interaction.docx", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table: Diagnosis Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -1006,15 +1006,10 @@ mlincom 2 - 1, stat(est p se)
 ********************************************************************************
 ********************************************************************************
 
-
-********************************************************************************
-// 1. Traditional CLPM
-********************************************************************************
-
 ******************
 // CCI
 *******************
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 
 drop if gds15 == .
 drop if cci_tot == .
@@ -1023,15 +1018,15 @@ drop if cci_tot == .
 // Model
 mi estimate, cmdok post: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
 			 L_cci_inftot L_mocatots_sd ///
-			faq_sd /// bmi_sd ///
+			faq_sd bmi_sd ///
 			female white grade_sd i.married i.relsubj_simple ///
-			age_base_sd yrs_since_last time_centered_sd ///
+			age_base_sd years_since0_sd ///
 			L_gds15 M1[id], family(poisson)) ///
     (cci_tot <- L_gds15 ///
-			faq_sd /// bmi_sd ///
+			faq_sd bmi_sd ///
 			female white grade_sd ///
 			i.married i.relsubj_simple ///
-			age_base_sd time_centered_sd yrs_since_last ///
+			age_base_sd years_since0_sd ///
 			L_cci_tot M2[id], family(poisson)), ///
 			cov(M1[id]*M2[id]) ///
     latent(M1 M2) nocapslatent ///
@@ -1118,10 +1113,10 @@ gen str20 label = string(coef, "%5.3f") + sig
 list
 
 * Export to CSV
-export delimited using "mi_clpm_cci_coefs_2025.csv", replace
+export delimited using "../../Output/Dta25 Output/Statistics/clpm_cci_coefs.csv", replace
 
 * Get fully standardized cross-lagged paths
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
 drop if cci_tot == .
 est restore clpm_cci
@@ -1170,24 +1165,22 @@ di `b_std_cci_to_gds'
 ******************
 // CCI Informant
 *******************
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
 drop if cci_inftot == .
 
 * Model with mi estimate
 mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
 		L_cci_inftot L_mocatots_sd faq_sd ///
-		/// bmi_sd ///
-		female white grade_sd ///
+		bmi_sd female white grade_sd ///
 		i.married i.relsubj_simple ///
-		age_base_sd time_centered_sd yrs_since_last ///
+		age_base_sd years_since0_sd ///
 		L_gds15 M1[id], family(poisson)) ///
     (cci_inftot <- L_gds15 ///
-		faq_sd ///
-		/// bmi_sd ///
+		faq_sd bmi_sd ///
 		female white grade_sd ///
 		i.married i.relsubj_simple ///
-		age_base_sd time_centered_sd yrs_since_last ///
+		age_base_sd years_since0_sd ///
 		L_cci_inftot M2[id], family(poisson)), ///
 	cov(M1[id]*M2[id]) ///
     latent(M1 M2) nocapslatent ///
@@ -1276,34 +1269,46 @@ gen str20 label = string(coef, "%5.3f") + sig
 list
 
 * Export to CSV
-export delimited using "mi_clpm_inf_coefs_2025.csv", replace
+export delimited using "../../Output/Stage 2 Output/Statistics/clpm_inf_coefs.csv", replace
 
 			
 ******************
 // Diagnosis
 *******************
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
 drop if MCIdem_iadc == .
+
+* --- Poisson piece alone ---
+mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot L_cci_inftot L_mocatots_sd faq_sd ///
+    bmi_sd female white grade_sd i.married i.relsubj_simple ///
+    age_base_sd years_since0_sd L_gds15 M1[id], family(poisson)), ///
+    latent(M1) nocapslatent intpoints(7)
+
+estimates store m1only
+
+* --- Bernoulli piece alone ---
+mi estimate, cmdok post dots: gsem (MCIdem_iadc <- L_gds15 faq_sd bmi_sd female white grade_sd ///
+    i.married i.relsubj_simple age_base_sd years_since0_sd ///
+    L_MCIdem_iadc M2[id], family(bernoulli)), ///
+    latent(M2) nocapslatent intpoints(7)  technique(bhhh 10 nr 100) iterate(200) difficult
 
 * Model with mi estimate
 mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
 		L_cci_inftot L_mocatots_sd faq_sd ///
-		/// bmi_sd ///
-		female white grade_sd ///
+		bmi_sd female white grade_sd ///
 		i.married i.relsubj_simple ///
-		age_base_sd time_centered_sd yrs_since_last ///
+		age_base_sd years_since0_sd ///
 		L_gds15 M1[id], family(poisson)) ///
     (MCIdem_iadc <- L_gds15 ///
-		faq_sd ///
-		/// bmi_sd ///
+		faq_sd bmi_sd ///
 		female white grade_sd ///
 		 i.married i.relsubj_simple ///
-		age_base_sd time_centered_sd yrs_since_last ///
+		age_base_sd years_since0_sd ///
 		L_MCIdem_iadc M2[id], family(bernoulli)), ///
     cov(M1[id]*M2[id]) ///
     latent(M1 M2) nocapslatent ///
-    difficult iterate(200) intpoints(12) technique(nr)
+    difficult iterate(500) intpoints(12) technique(bhhh 10 nr 100)
 est sto clpm_diag
 
 /*
@@ -1312,12 +1317,12 @@ preserve
 keep if yrs_since_last >= 0.5 & yrs_since_last <= 1.5
 mi estimate, cmdok post dots: gsem (gds15 <- L_cci_tot ///
 		L_cci_inftot L_mocatots_sd L_MCIdem_iadc ///
-		time_centered_sd age_base_sd female white grade_sd faq_sd ///
+		years_since0_sd age_base_sd female white grade_sd faq_sd ///
 		/// bmi_sd ///
 		i.married ///
 		L_gds15 M1[id], family(poisson)) ///
     (MCIdem_iadc <- L_gds15 ///
-		time_centered_sd age_base_sd female white grade_sd faq_sd ///
+		years_since0_sd age_base_sd female white grade_sd faq_sd ///
 		/// bmi_sd ///
 		i.married i.apoe ///
 		L_MCIdem_iadc M2[id], family(bernoulli)), ///
@@ -1407,38 +1412,36 @@ gen str20 label = string(coef, "%5.3f") + sig
 list
 
 * Export to CSV
-export delimited using "mi_clpm_MCIdem_coefs_2025.csv", replace			
+export delimited using "../../Output/Dta25 Output/Statistics/clpm_diagnosis_coefs.csv", replace			
 		
 
 ******************
 // MoCA
 *******************
-use "mi20_iadc-long-recoded_2025.dta", clear
+use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
 drop if mocatots_sd == .
 
 * Model with mi estimate
 mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
 		L_cci_inftot L_mocatots_sd faq_sd ///
-		/// bmi_sd ///
-		female white grade_sd ///
+		bmi_sd female white grade_sd ///
 		i.married i.relsubj_simple ///
-		age_base_sd time_centered_sd yrs_since_last ///
+		age_base_sd years_since0_sd ///
 		L_gds15 M1[id], family(poisson)) ///
     (mocatots_sd <- L_gds15 faq_sd ///
-		/// bmi_sd ///
-		female white grade_sd ///
+		bmi_sd female white grade_sd ///
 		i.married i.relsubj_simple ///
-		age_base_sd time_centered_sd yrs_since_last ///
+		age_base_sd years_since0_sd ///
 		L_mocatots_sd M2[id], family(gaussian)), ///
     cov(M1[id]*M2[id]) ///
     latent(M1 M2) nocapslatent ///
-    difficult iterate(400) technique(nr) nrtolerance(1e-4)
+    difficult iterate(500) intpoints(10) technique(nr 100 bhhh 10)
 
 est sto clpm_moca
 
 mibeta L_gds15 L_mocatots_sd
-display sqrt(.0611067) // .24719769
+display sqrt(.0772001) // .27784906
 
 estimates restore clpm_moca
 
@@ -1518,13 +1521,13 @@ gen str20 label = string(coef, "%5.3f") + sig
 list
 
 * Export to CSV
-export delimited using "mi_clpm_moca_coefs_2025.csv", replace		
+export delimited using "../../Output/Dta25 Output/Statistics/clpm_moca_coefs.csv", replace		
 
 
 *****
 * Table
 
-esttab clpm_diag clpm_cci clpm_inf clpm_moca using "../Tables/mi_CLPM-main-results_2025.rtf", ///
+esttab clpm_diag clpm_cci clpm_inf clpm_moca using "../../Output/Dta25 Output/Tables/raw/TA5_CLPM.rtf", ///
     replace ///
     eform ///
     b(%9.3f) se(%9.3f) ///

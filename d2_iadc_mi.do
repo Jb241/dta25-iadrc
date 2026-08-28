@@ -116,6 +116,9 @@ qui mi passive: gen L_cci_tot_bi = L.cci_tot_bi
 qui mi passive: gen L_cci_inftot_bi = L.cci_inftot_bi
 qui mi passive: gen L_mocatots_bi = L.mocatots_bi
 qui mi passive: gen L_dep15_f2 = L.dep15_f2
+qui mi passive: gen L_cci_tot = L.cci_tot
+qui mi passive: gen L_cci_inftot = L.cci_inftot
+qui mi passive: gen L_mocatots = L.mocatots
 
 ********************************************************************************	
 // Labels for variables that are not yet labeled or recreated
@@ -134,6 +137,9 @@ label var L_cci_inftot_sd "Lagged Informant CCI (SD)"
 label var L_cci_tot_sd "Lagged CCI (SD)"
 label var L_mocatots_sd "Lagged MoCA (SD)"
 label var L_gds15 "Lagged GDS-15"
+label var L_cci_tot "Lagged CCI"
+label var L_cci_inftot "Lagged Informant CCI"
+label var L_mocatots "Lagged MoCA"
 label var years_since0 "Years since 1st visit"
 label var age_base_sd "Age at 1st visit (SD)"
 label var grade_sd "Years of education (SD)"
