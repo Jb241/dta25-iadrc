@@ -102,21 +102,21 @@ gen trailbtime = trailb
 replace trailbtime = . if trailb == 995 | trailb == 996 | trailb == 997 | trailb == 998
 sum trailbtime
 
-* Diagnosis // I think MBI and impaired not MCI should just be dropped
-			// SCD as normal
+* Diagnosis
+			// SCD, MBI, and impaired not MCI as normal
 			// dementia diagnosis or MCI = 1
 gen MCIdem_iadc = .
 replace MCIdem_iadc = 1 if diag == "Amnestic MCI-memory impairment"
 replace MCIdem_iadc = 1 if diag == "Amnestic MCI-memory impairment Plus one or more domains"
 replace MCIdem_iadc = 1 if diag == "Dementia"
-replace MCIdem_iadc = 99 if diag == "Impaired, not MCI"
-replace MCIdem_iadc = 99 if diag == "MBI"
+replace MCIdem_iadc = 0 if diag == "Impaired, not MCI"
+replace MCIdem_iadc = 0 if diag == "MBI"
 replace MCIdem_iadc = 1 if diag == "MCI"
 replace MCIdem_iadc = 1 if diag == "Non-amnestic MCI-multiple domains"
 replace MCIdem_iadc = 1 if diag == "Non-amnestic MCI-single domain"
 replace MCIdem_iadc = 0 if diag == "Normal"
 replace MCIdem_iadc = 0 if diag == "SCD (particpant concern UDS4)"
-label define MCIdemlbl 0 "Normal" 1 "MCI/Dementia" 99 "To drop: MBI/impaired"
+label define MCIdemlbl 0 "Normal" 1 "MCI/Dementia"
 label val MCIdem_iadc MCIdemlbl
 label var MCIdem_iadc "Diagnosis (1=MCI/Dementia)"
 
@@ -211,9 +211,9 @@ gen visitdate_s = mdy(mm, dd, yy)
 format visitdate_s %td
 keep id visitdate_s depothr
 merge 1:1 id visitdate_s using "../Dta25 Data/raw and intermediate/iadc25_longitudinal_p2.dta"
-keep if _merge == 3
+drop if _merge == 1
 drop _merge
-* 459 observations in 2025 data not in 2024 data
+* 217 observations in 2024 data not in 2025 data (weird)
 tab depothr 
 gen pastdep = depothr
 replace pastdep = . if depothr == 9
@@ -328,12 +328,8 @@ misstable summarize gds15 MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd ///
 	years_since0_sd age_base_sd faq_sd female white grade_sd married ///
 	relsubj_simple mastery1 mastery2 visitfreq famfreq  ///
 	yrs_since_last bmi_sd pastdep
-
-drop if years_since0_sd == . // remove 149 observations where this is missing (no date for visit)
-drop if MCIdem_iadc == 99 // remove 56 observations where diagnosis is MBI no MCI (not relevant)
-drop if L_MCIdem_iadc == 99
-	
-misstable summarize	years_since0_sd age_base_sd female grade_sd
+drop if female == .
+misstable summarize	years_since0_sd age_base_sd female grade_sd MCIdem_iadc
 
 ************
 // Save final data set

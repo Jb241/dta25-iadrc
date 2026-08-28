@@ -120,10 +120,10 @@ esttab using "../../Output/Dta25 Output/Tables/raw/T1_descriptive_table.docx", /
 
 // More sample info
 
-* number of participants			// 575 unique participants
+* number of participants			// 433 unique participants
 mi xeq 1: codebook id
 
-* number of waves					// 19 waves max
+* number of waves					// 18 waves max
 preserve
 mi extract 1, clear
 bysort id: gen nobs = _N
@@ -131,7 +131,7 @@ tabulate nobs
 restore
 
 * year span
-mi xeq 1: codebook visitdate_s 		// 2006-2026
+mi xeq 1: codebook visitdate_s 		// 2006-2024
 
 // Cross diagonal counts
 set seed 23414
@@ -524,14 +524,14 @@ mimrgns, dydx(cci_tot_sd) post predict(equation(gds15)) /// no mediators (1)
 estimates save "../../Output/Dta25 Output/Statistics/mimrgns_CCI_alternative_mediation", replace
 estimates use "../../Output/Dta25 Output/Statistics/mimrgns_CCI_alternative_mediation"
 estimates replay
-* moca
+* moca (p=0.997, -0.03%)
 mlincom 1 - 2, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
-* faq
+* faq (p=0.971, -0.002%)
 mlincom 1 - 3, stat(est se p)
 display %12.8f r(est)
 nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
-* both
+* both (p=0.968, -0.41%)
 mlincom 1 - 4, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 
@@ -543,13 +543,13 @@ mimrgns, dydx(MCIdem_iadc) post predict(equation(gds15)) /// no mediators (1)
 								predict(equation(gds15_copy3))
 estimates save "../../Output/Dta25 Output/Statistics/mimrgns_diagnosis_alternative_mediation", replace
 estimates use "../../Output/Dta25 Output/Statistics/mimrgns_diagnosis_alternative_mediation"
-* moca
+* moca (p=0.994, 0.22%)
 mlincom 1 - 2, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
-* faq
+* faq (p=0.981, -0.63%)
 mlincom 1 - 3, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
-* both
+* both (p=0.991, 0.32%)
 mlincom 1 - 4, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 
@@ -568,7 +568,7 @@ nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 ********************************************************************************
 
 **********************
-* Diagnosis x CCI
+* Diagnosis x CCI (p=0.49)
 
 use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
@@ -645,14 +645,13 @@ file close myfile
 
 * CCI at L_MCIdem_iadc==0 (normal)
 mi xeq: sum cci_tot_sd if MCIdem_iadc == 0, d
-* min cci across all 20: -1.212761   
-* smallest max cci across 20: 4.147753
+* min cci across all 20: -1.2  
+* smallest max cci across 20: 4.1
 
 * CCI at L_MCIdem_iadc==1 (diagnosed)
 mi xeq: sum cci_tot_sd if MCIdem_iadc == 1, d
-* min cci across all 20: -1.212761 
-* smallest max cci across 20: 3.529232
-
+* min cci across all 20: -1.2
+* smallest max cci across 20: 3.5
 * Bounds: -1.2 to 3.5
 
 **
@@ -681,7 +680,7 @@ graph export "../../Output/Stage 2 Output/Figures/F5_CCI_diagnosis_interaction.t
 	
 
 **********************	
-* Informant x CCI
+* Informant x CCI (p=0.11)
 
 use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
@@ -788,7 +787,7 @@ marginsplot, ///
 graph export "../../Output/Stage 2 Output/Figures/F7_CCI_informant_interaction.tif", replace
 
 **********************	
-* Diagnosis x Informant
+* Diagnosis x Informant (p=0.11)
 
 use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
@@ -935,7 +934,7 @@ mi xtset id wave
 mi estimate, cmdok eform post: mepoisson gds15 ///
 	c.cci_tot_sd##c.grade_sd MCIdem_iadc cci_inftot_sd mocatots_sd ///
     years_since0_sd age_base_sd female white faq_sd ///
-	bmi_sd i.married ///
+	bmi_sd i.married /// 
     || id:, irr iterate(200) intpoints(12) 
 est sto edint_cci
 

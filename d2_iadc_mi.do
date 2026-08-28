@@ -25,10 +25,10 @@ local cciomit i.L_MCIdem_iadc L_cci_inftot_sd L_mocatots_sd L_gds15
 local infomit i.L_MCIdem_iadc L_cci_tot_sd L_mocatots_sd L_gds15
 local mocaomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_gds15
 local gdsomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd
-local Lcciomit MCIdem_iadc cci_inftot_sd mocatots_sd gds15
-local Linfomit MCIdem_iadc cci_tot_sd mocatots_sd gds15
-local Lmocaomit MCIdem_iadc cci_tot_sd cci_inftot_sd gds15
-local Lgdsomit MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd
+local Lcciomit i.MCIdem_iadc cci_inftot_sd mocatots_sd gds15
+local Linfomit i.MCIdem_iadc cci_tot_sd mocatots_sd gds15
+local Lmocaomit i.MCIdem_iadc cci_tot_sd cci_inftot_sd gds15
+local Lgdsomit i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd
 local LMCIomit cci_tot_sd cci_inftot_sd mocatots_sd gds15
 local marriedomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 i.mastery1 i.famfreq
 	
@@ -48,7 +48,7 @@ mi impute chained ///
 	(pmm, knn(5) omit(`Lmocaomit')) L_mocatots_sd ///
 	(pmm, knn(5) omit(`Lgdsomit')) L_gds15 ///
 	(logit, omit(`LMCIomit') augment) L_MCIdem_iadc ///
-	= years_since0_sd age_base_sd female grade_sd MCIdem_iadc, rseed(23414) dots add(20)
+	= years_since0_sd age_base_sd female grade_sd i.MCIdem_iadc, rseed(23414) dots add(20)
 
 save "../Dta25 Data/raw and intermediate/mi_iadc_dta25.dta", replace
 
