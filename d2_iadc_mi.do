@@ -17,7 +17,7 @@ mi set wide
 mi register regular years_since0_sd age_base_sd female grade_sd MCIdem_iadc
 mi register imputed white cci_tot_sd L_cci_tot_sd cci_inftot_sd L_cci_inftot_sd ///
 					L_MCIdem_iadc mocatots_sd L_mocatots_sd gds15 L_gds15 ///
-					bmi_sd memwors_bi pastdep famfreq visitfreq mastery1 mastery2 ///
+					bmi_sd memwors_bi pastdep famfreq_rev visitfreq_rev mastery1 mastery2 ///
 					relsubj_simple married faq_sd craftdre_sd reydecorab_sd trailbtime_sd
 
 local nolagomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15
@@ -30,13 +30,13 @@ local Linfomit i.MCIdem_iadc cci_tot_sd mocatots_sd gds15
 local Lmocaomit i.MCIdem_iadc cci_tot_sd cci_inftot_sd gds15
 local Lgdsomit i.MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd
 local LMCIomit cci_tot_sd cci_inftot_sd mocatots_sd gds15
-local marriedomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 i.mastery1 i.famfreq
+local marriedomit i.L_MCIdem_iadc L_cci_tot_sd L_cci_inftot_sd L_mocatots_sd L_gds15 i.mastery1 i.famfreq_rev
 	
 * MICE (n=20)
 mi impute chained /// 
 	(regress, omit(`nolagomit')) bmi_sd ///
 	(logit, omit(`nolagomit') augment) memwors_bi pastdep white relsubj_simple ///
-	(ologit, omit(`nolagomit') augment) famfreq visitfreq mastery1 mastery2 ///
+	(ologit, omit(`nolagomit') augment) famfreq_rev visitfreq_rev mastery1 mastery2 ///
 	(mlogit, omit(`marriedomit') augment) married /// -- to fix convergence/perfect prediction issues
 	(pmm, knn(5) omit(`nolagomit')) faq_sd craftdre_sd reydecorab_sd trailbtime_sd ///
 	(pmm, knn(5) omit(`cciomit')) cci_tot_sd ///
