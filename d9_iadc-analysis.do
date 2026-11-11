@@ -32,10 +32,8 @@ qui mi passive: gen visdum2 = (visitfreq==2)
 qui mi passive: gen visdum3 = (visitfreq==3)
 qui mi passive: gen visdum4 = (visitfreq==4)
 qui mi passive: gen visdum5 = (visitfreq==5)
-qui mi passive: gen reldum0 = (relsubj_simple==1)
-qui mi passive: gen reldum1 = (relsubj_simple==2)
-qui mi passive: gen reldum2 = (relsubj_simple==3)
-qui mi passive: gen reldum3 = (relsubj_simple==4)
+qui mi passive: gen reldum0 = (relsubj_simple==0)
+qui mi passive: gen reldum1 = (relsubj_simple==1)
 label var mardum1 "Married"
 label var mardum2 "No longer married"
 label var mardum3 "Never married"
@@ -58,22 +56,20 @@ label var visdum3 "Several times a month"
 label var visdum4 "Several times a week"
 label var visdum5 "Every day or almost every day"
 label var reldum0 "Spouse or child"
-label var reldum1 "Other relative"
-label var reldum2 "Friend or neighbor"
-label var reldum3 "Paid caretaker"
+label var reldum1 "Other"
 
 * Create list of all variables to summarize
 local allvars gds15 MCIdem_iadc cci_tot cci_inftot ///
 	mocatots faq bmi ///
 	female white grade ///
 	mardum1 mardum2 mardum3 ///
-	reldum0 reldum1 reldum2 reldum3 ///
-    age_base years_since0 yrs_since_last ///
+	reldum0 reldum1 ///
+    age_base years_since0 ///
 	mastdum1 mastdum2 mastdum3 mastdum4 ///
 	mast2dum1 mast2dum2 mast2dum3 mast2dum4 ///
 	visdum1 visdum2 visdum3 visdum4 visdum5 ///
-	famdum1 famdum2 famdum3 famdum4 famdum5 
-	/// pastdep
+	famdum1 famdum2 famdum3 famdum4 famdum5 ///
+	pastdep
 
 * Get sample size from imputed datasets (m=1)
 mi xeq 1: summarize cci_tot
@@ -111,7 +107,7 @@ ereturn post means
 estadd matrix sds = sds
 
 * Export table using esttab
-esttab using "../../Output/Dta25 Output/Tables/raw/T1_descriptive_table.docx", ///
+esttab using "../../Output/Dta25 Output/Tables/raw/T1_descriptive_table.rtf", ///
 	replace ///
     cells("b(fmt(2) label(Mean/Proportion)) sds(fmt(2) label(SD))") ///
     label title("Descriptive Statistics") ///
@@ -120,18 +116,19 @@ esttab using "../../Output/Dta25 Output/Tables/raw/T1_descriptive_table.docx", /
 
 // More sample info
 
-* number of participants			// 433 unique participants
+* number of participants			// 573 unique participants
 mi xeq 1: codebook id
 
-* number of waves					// 18 waves max
+* number of waves					// 19 waves max
 preserve
 mi extract 1, clear
 bysort id: gen nobs = _N
 tabulate nobs
+sum nobs
 restore
 
 * year span
-mi xeq 1: codebook visitdate_s 		// 2006-2024
+mi xeq 1: codebook visitdate_s 		// 2006-2025
 
 // Cross diagonal counts
 set seed 23414
@@ -181,6 +178,7 @@ est sto mi_main_contemp_full
 est restore mi_main_contemp_full
 mimrgns, dydx(cci_tot_sd) predict(mu)
 mimrgns, dydx(MCIdem_iadc) predict(mu)
+* copied/pasted to "../../Output/Dta25 Output/Statistics/ames_main.docx"
 
 preserve
 mi xtset id wave
@@ -325,7 +323,7 @@ mi estimate, cmdok eform post: mepoisson gds15 ///
 est sto mi_trail
 
 esttab mi_craft mi_rey mi_trail using ///
-	"../../Output/Dta25 Output/Tables/raw/TA4_supplementary_objective.docx", ///
+	"../../Output/Dta25 Output/Tables/raw/TA4_supplementary_objective.rtf", ///
     replace ///
     eform ///
     b(%9.3f) se(%9.3f) ///
@@ -354,7 +352,7 @@ mi estimate, cmdok eform post: xtpoisson gds15 ///
 est sto m2_mi_fe
 
 esttab m1_mi_fe m2_mi_fe using ///
-	"../../Output/Stage 2 Output/Tables/raw/T4_fixed_effects.docx", ///
+	"../../Output/Dta25 Output/Tables/raw/T4_fixed_effects.rtf", ///
     replace eform ///
     b(%9.3f) se(%9.3f) ///
     star(* 0.05 ** 0.01 *** 0.001) ///
@@ -382,27 +380,35 @@ mi xtset id wave
 
 qui mi estimate, cmdok post dots: gsem ///
 	/// No mediators ///
-	(gds15 <- cci_tot_sd cci_inftot_sd ///
-					mocatots_sd MCIdem_iadc ///
-                    years_since0_sd age_base_sd female white grade_sd faq_sd ///
-					bmi_sd yrs_since_last i.married i.relsubj_simple M1[id], poisson) ///
+	(gds15 <- MCIdem_iadc cci_tot_sd cci_inftot_sd ///
+					mocatots_sd faq_sd bmi_sd ///
+					female white grade_sd ///
+					i.married relsubj_simple ///
+                    years_since0_sd age_base_sd ///
+					M1[id], poisson) ///
 	/// Mastery added ///
-	(gds15_copy1 <- cci_tot_sd cci_inftot_sd ///
-					mocatots_sd MCIdem_iadc ///
-                    years_since0_sd age_base_sd female white grade_sd faq_sd ///
-					bmi_sd yrs_since_last i.married i.relsubj_simple M1[id] ///
+	(gds15_copy1 <- MCIdem_iadc cci_tot_sd cci_inftot_sd ///
+					mocatots_sd faq_sd bmi_sd ///
+					female white grade_sd ///
+                    i.married relsubj_simple ///
+					years_since0_sd age_base_sd ///
+					M1[id] ///
 					i.mastery1 i.mastery2, poisson) ///	
 	/// Social connectedness added ///
-	(gds15_copy2 <- cci_tot_sd cci_inftot_sd ///
-					mocatots_sd MCIdem_iadc ///
-                    years_since0_sd age_base_sd female white grade_sd faq_sd ///
-					bmi_sd yrs_since_last i.married i.relsubj_simple M1[id] ///
+	(gds15_copy2 <- MCIdem_iadc cci_tot_sd cci_inftot_sd ///
+					mocatots_sd faq_sd bmi_sd ///
+					female white grade_sd ///
+					i.married relsubj_simple ///
+                    years_since0_sd age_base_sd ///
+					M1[id] ///
 					i.famfreq i.visitfreq, poisson) ///	
 	/// Both added ///
-	 (gds15_copy3 <- cci_tot_sd cci_inftot_sd ///
-                    mocatots_sd MCIdem_iadc ///
-                    years_since0_sd age_base_sd female white grade_sd ///
-					bmi_sd yrs_since_last i.married i.relsubj_simple M1[id] ///
+	 (gds15_copy3 <- MCIdem_iadc cci_tot_sd cci_inftot_sd ///
+                    mocatots_sd faq_sd bmi_sd ///
+					female white grade_sd ///
+					i.married relsubj_simple ///
+                    years_since0_sd age_base_sd ///
+					M1[id] ///
 					i.mastery1 i.mastery2 ///
                     i.famfreq i.visitfreq ///
                     faq_sd , poisson) ///
@@ -412,7 +418,7 @@ qui mi estimate, cmdok post dots: gsem ///
 	
 estimates store both_models_re
 esttab both_models_re both_models_re both_models_re both_models_re using ///
-	"../../Output/Dta25 Output/Tables/raw/T5_focal_mediation.docx", replace ///
+	"../../Output/Dta25 Output/Tables/raw/T5_focal_mediation.rtf", replace ///
     equation(1 2 3 4) ///
     mtitles("Model 1" "Model 2" "Model 3" "Model 4") ///
     eform b(3) se(3) ///
@@ -429,14 +435,14 @@ mimrgns, dydx(cci_tot_sd) post predict(equation(gds15)) /// no mediators (1)
 estimates save "../../Output/Dta25 Output/Statistics/mimrgns_CCI_mediation", replace
 estimates use "../../Output/Dta25 Output/Statistics/mimrgns_CCI_mediation"
 estimates replay
-* mastery (p=0.014, 28.59%)
+* mastery (p=0.013, 24.52%)
 mlincom 1 - 2, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
-* social (p=0.965, 0.43%)
+* social (p=0.871, 1.38%)
 mlincom 1 - 3, stat(est se p)
 display %12.8f r(est)
 nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
-* both (p=0.014, 28.87%)
+* both (p=0.015, 24.95%)
 mlincom 1 - 4, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 
@@ -472,27 +478,32 @@ mi xtset id wave
 
 mi estimate, cmdok post dots: gsem ///
 	/// No mediators ///
-	(gds15 <- cci_tot_sd cci_inftot_sd ///
-					MCIdem_iadc ///
-                    years_since0_sd age_base_sd female white grade_sd ///
-					bmi_sd yrs_since_last i.married i.relsubj_simple M1[id], poisson) ///
+	(gds15 <- MCIdem_iadc cci_tot_sd cci_inftot_sd ///
+					bmi_sd ///
+                    female white grade_sd ///
+					i.married i.relsubj_simple ///
+					age_base_sd years_since0_sd ///
+					M1[id], poisson) ///
 	/// MoCA added ///
-	(gds15_copy1 <- cci_tot_sd cci_inftot_sd ///
-					mocatots_sd MCIdem_iadc ///
-                    years_since0_sd age_base_sd female white grade_sd ///
-					bmi_sd yrs_since_last i.married i.relsubj_simple ///
+	(gds15_copy1 <- MCIdem_iadc cci_tot_sd cci_inftot_sd ///
+					bmi_sd ///
+                    female white grade_sd ///
+					i.married i.relsubj_simple ///
+					age_base_sd years_since0_sd ///
 					mocatots_sd M1[id], poisson) ///
 	/// FAQ added ///
-	(gds15_copy2 <- cci_tot_sd cci_inftot_sd ///
-					MCIdem_iadc ///
-                    years_since0_sd age_base_sd female white grade_sd ///
-					bmi_sd yrs_since_last i.married i.relsubj_simple ///
+	(gds15_copy2 <- MCIdem_iadc cci_tot_sd cci_inftot_sd ///
+					bmi_sd ///
+                    female white grade_sd ///
+					i.married i.relsubj_simple ///
+					age_base_sd years_since0_sd ///
 					faq_sd M1[id], poisson) ///	
 	/// Both added ///
-	(gds15_copy3 <- cci_tot_sd cci_inftot_sd ///
-					MCIdem_iadc ///
-                    years_since0_sd age_base_sd female white grade_sd ///
-					bmi_sd yrs_since_last i.married i.relsubj_simple ///
+	(gds15_copy3 <- MCIdem_iadc cci_tot_sd cci_inftot_sd ///
+					bmi_sd ///
+                    female white grade_sd ///
+					i.married i.relsubj_simple ///
+					age_base_sd years_since0_sd ///
 					mocatots_sd faq_sd  M1[id], poisson) ///	
 	 , latent(M1) nocapslatent difficult iterate(400) 
 * specified as two, they are almost identical because same outcome and similar covariates. supported by: https://www.stata.com/manuals/semexample42g.pdf
@@ -502,37 +513,32 @@ estimates store both_models_re_moca
 
 esttab both_models_re_moca both_models_re_moca ///
 	both_models_re_moca both_models_re_moca using ///
-	"../../Output/Dta25 Output/Tables/raw/TA6_alternative_mediation.docx", replace ///
+	"../../Output/Dta25 Output/Tables/raw/TA6_alternative_mediation.rtf", replace ///
     equation(1 2 3 4) ///
     mtitles("Model 1" "Model 2" "Model 3" "Model 4") ///
     eform b(3) se(3) ///
     star(* 0.05 ** 0.01 *** 0.001) ///
     label nobaselevels drop(_cons var(M1[id])) ///
-    compress ///
-	order(MCIdem_iadc cci_tot_sd cci_inftot_sd ///
-          female white grade_sd ///
-		  2.married 3.married 2.relsubj_simple 3.relsubj_simple 4.relsubj_simple ///
-		  age_base_sd years_since0_sd yrs_since_last ///
-          mocatots_sd faq_sd)
+    compress
 	
 * CCI
 est restore both_models_re_moca
 mimrgns, dydx(cci_tot_sd) post predict(equation(gds15)) /// no mediators (1)
 								predict(equation(gds15_copy1)) /// adds moca (2)
 								predict(equation(gds15_copy2)) /// adds faq (3)
-								predict(equation(gds15_copy3)
+								predict(equation(gds15_copy3))
 estimates save "../../Output/Dta25 Output/Statistics/mimrgns_CCI_alternative_mediation", replace
 estimates use "../../Output/Dta25 Output/Statistics/mimrgns_CCI_alternative_mediation"
 estimates replay
-* moca (p=0.997, -0.03%)
-mlincom 1 - 2, stat(est se p)
+* moca (p=0.996, -0.039%)
+mlincom 1 - 2, stat(est se p) dec(4)
 nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
-* faq (p=0.971, -0.002%)
-mlincom 1 - 3, stat(est se p)
+* faq (p=0.961, -0.415%)
+mlincom 1 - 3, stat(est se p) dec(4)
 display %12.8f r(est)
 nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
-* both (p=0.968, -0.41%)
-mlincom 1 - 4, stat(est se p)
+* both (p=0.957, -0.453%)
+mlincom 1 - 4, stat(est se p) dec(5)
 nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 
 * Diagnosis
@@ -543,13 +549,13 @@ mimrgns, dydx(MCIdem_iadc) post predict(equation(gds15)) /// no mediators (1)
 								predict(equation(gds15_copy3))
 estimates save "../../Output/Dta25 Output/Statistics/mimrgns_diagnosis_alternative_mediation", replace
 estimates use "../../Output/Dta25 Output/Statistics/mimrgns_diagnosis_alternative_mediation"
-* moca (p=0.994, 0.22%)
+* moca (p=0.978, -0.977%)
 mlincom 1 - 2, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[2._predict]) / _b[1._predict] * 100)
-* faq (p=0.981, -0.63%)
-mlincom 1 - 3, stat(est se p)
+* faq (p=0.976, -1.054%)
+mlincom 1 - 3, stat(est se p) dec(5)
 nlcom (pct_mediated: (_b[1._predict] - _b[3._predict]) / _b[1._predict] * 100)
-* both (p=0.991, 0.32%)
+* both (p=0.983, -0.753%)
 mlincom 1 - 4, stat(est se p)
 nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 
@@ -568,7 +574,7 @@ nlcom (pct_mediated: (_b[1._predict] - _b[4._predict]) / _b[1._predict] * 100)
 ********************************************************************************
 
 **********************
-* Diagnosis x CCI (p=0.49)
+* Diagnosis x CCI (p=0.009)
 
 use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
@@ -606,12 +612,12 @@ local p_me1 = 2*ttail(`df1', abs(`t1'))
 local p_me2 = 2*ttail(`df2', abs(`t2'))
 local sig1 = cond(`p_me1'<0.001, "***", cond(`p_me1'<0.01, "**", cond(`p_me1'<0.05, "*", "")))
 local sig2 = cond(`p_me2'<0.001, "***", cond(`p_me2'<0.01, "**", cond(`p_me2'<0.05, "*", "")))
-mlincom 2 - 1, stat(est p se)
+mlincom 2 - 1, stat(est se p)
 local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../../Output/Dta25 Output/Tables/raw/CCI_diagnosis_interaction.docx", write replace
+file open myfile using "../../Output/Dta25 Output/Tables/raw/T6_CCI_diagnosis_interaction.rtf", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table 6: Diagnosis Marginal Effect on GDS-15 by CCI}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -676,11 +682,11 @@ marginsplot, ///
     graphregion(fcolor(white) lcolor(white) margin(medium)) ///
     plotregion(fcolor(white) lcolor(black)) ///
     xsize(5) ysize(4)
-graph export "../../Output/Stage 2 Output/Figures/F5_CCI_diagnosis_interaction.tif", replace
+graph export "../../Output/Dta25 Output/Figures/F5_CCI_diagnosis_interaction.tif", replace
 	
 
 **********************	
-* Informant x CCI (p=0.11)
+* Informant x CCI (p=0.197)
 
 use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
@@ -720,7 +726,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../../Output/Dta25 Output/Tables/raw/CCI_informant_interaction.docx", write replace
+file open myfile using "../../Output/Dta25 Output/Tables/raw/T8_CCI_informant_interaction.rtf", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table: CCI Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -784,10 +790,10 @@ marginsplot, ///
     graphregion(fcolor(white) lcolor(white) margin(medium)) ///
     plotregion(fcolor(white) lcolor(black)) ///
     xsize(6) ysize(4)         
-graph export "../../Output/Stage 2 Output/Figures/F7_CCI_informant_interaction.tif", replace
+graph export "../../Output/Dta25 Output/Figures/F7_CCI_informant_interaction.tif", replace
 
 **********************	
-* Diagnosis x Informant (p=0.11)
+* Diagnosis x Informant (p=0.028)
 
 use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
@@ -826,7 +832,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../../Output/Dta25 Output/Tables/raw/diagnosis_informant_interaction.docx", write replace
+file open myfile using "../../Output/Dta25 Output/Tables/raw/T7_diagnosis_informant_interaction.rtf", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table: Diagnosis Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -913,7 +919,7 @@ graph export "../../Output/Dta25 Output/Figures/F6_diagnosis_informant_interacti
 **********************
 * Focal interactions table
 esttab m_int_diag m_int_inf_diag_rel m_int_inf_rel ///
-	using "../../Output/Dta25 Output/Tables/raw/TA10_interaction_regression.docx", ///
+	using "../../Output/Dta25 Output/Tables/raw/TA10_interaction_regression.rtf", ///
     replace ///
     eform ///
     b(%9.3f) se(%9.3f) ///
@@ -990,7 +996,7 @@ mi estimate, cmdok post: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
 
 est sto clpm_cci
 mibeta L_gds15 L_cci_tot
-display sqrt(.2205448) //.46962198
+display sqrt(.2215557) //.47069704
 estimates restore clpm_cci
 
 // Extract Coefs (exponentiated for IRRs)
@@ -1145,7 +1151,7 @@ mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
 est sto clpm_inf
 
 mibeta L_gds15 L_cci_inftot
-display sqrt(.0787856) // .28068773
+display sqrt(.0842936) // .2903336
 
 estimates restore clpm_inf
 
@@ -1235,20 +1241,6 @@ use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
 drop if gds15 == .
 drop if MCIdem_iadc == .
 
-* --- Poisson piece alone ---
-mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot L_cci_inftot L_mocatots_sd faq_sd ///
-    bmi_sd female white grade_sd i.married i.relsubj_simple ///
-    age_base_sd years_since0_sd L_gds15 M1[id], family(poisson)), ///
-    latent(M1) nocapslatent intpoints(7)
-
-estimates store m1only
-
-* --- Bernoulli piece alone ---
-mi estimate, cmdok post dots: gsem (MCIdem_iadc <- L_gds15 faq_sd bmi_sd female white grade_sd ///
-    i.married i.relsubj_simple age_base_sd years_since0_sd ///
-    L_MCIdem_iadc M2[id], family(bernoulli)), ///
-    latent(M2) nocapslatent intpoints(7)  technique(bhhh 10 nr 100) iterate(200) difficult
-
 * Model with mi estimate
 mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
 		L_cci_inftot L_mocatots_sd faq_sd ///
@@ -1288,7 +1280,7 @@ restore
 */
 
 mibeta L_gds15 L_MCIdem_iadc
-display sqrt(.0575179) // .2398289
+display sqrt(.0591013) // .24310759
 
 estimates restore clpm_diag
 
@@ -1397,7 +1389,7 @@ mi estimate, cmdok post dots: gsem (gds15 <- L_MCIdem_iadc L_cci_tot ///
 est sto clpm_moca
 
 mibeta L_gds15 L_mocatots_sd
-display sqrt(.0772001) // .27784906
+display sqrt(.0574648) // .23971817
 
 estimates restore clpm_moca
 
