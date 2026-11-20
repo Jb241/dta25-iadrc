@@ -107,7 +107,7 @@ ereturn post means
 estadd matrix sds = sds
 
 * Export table using esttab
-esttab using "../../Output/Dta25 Output/Tables/raw/T1_descriptive_table.rtf", ///
+esttab using "../Output/Dta25 Output/Tables/raw/T1_descriptive_table.rtf", ///
 	replace ///
     cells("b(fmt(2) label(Mean/Proportion)) sds(fmt(2) label(SD))") ///
     label title("Descriptive Statistics") ///
@@ -135,7 +135,7 @@ set seed 23414
 scalar rand_m = ceil(runiform() * 20)
 display rand_m
 
-local outfile "../../Output/Dta25 Output/Tables/raw/crosstabs.doc"
+local outfile "../Output/Dta25 Output/Tables/raw/crosstabs.doc"
 
 preserve
 mi extract 2, clear
@@ -194,7 +194,7 @@ qui mi estimate: regress gds15 ///
 	relsubj_simple
 mivif
 restore
-* copied/pasted to: "../../Output/Dta25 Output/Statistics/vif.docx"
+* copied/pasted to: "../Output/Dta25 Output/Statistics/vif.docx"
 
 * plot
 mi xeq: sum cci_tot_sd, d
@@ -216,7 +216,7 @@ marginsplot, ///
     graphregion(fcolor(white) lcolor(white) margin(medium)) ///
     plotregion(fcolor(white) lcolor(black)) ///
     xsize(4) ysize(4)
-graph export "../../Output/Dta25 Output/Figures/F2_CCI_main.tif", replace width(3000)
+graph export "../Output/Dta25 Output/Figures/F2_CCI_main.tif", replace width(3000)
 
 
 * plot for diagnosis
@@ -238,11 +238,11 @@ marginsplot, ///
     plotregion(fcolor(white) lcolor(black)) ///
     yscale(range(0 4.5)) ///
     xsize(4) ysize(4)
-graph export "../../Output/Dta25 Output/Figures/F1_diagnosis_main.tif", replace width(3000)
+graph export "../Output/Dta25 Output/Figures/F1_diagnosis_main.tif", replace width(3000)
 	
 * Tables
 esttab mi_main_contemp_red mi_main_contemp_full using ///
-	"../../Output/Dta25 Output/Tables/raw/T2_main_regression.rtf", ///
+	"../Output/Dta25 Output/Tables/raw/T2_main_regression.rtf", ///
     replace ///
     eform ///
     b(%9.3f) se(%9.3f) ///
@@ -279,7 +279,7 @@ mi estimate, cmdok eform post: mepoisson gds15 ///
 est sto lagpastdep
 
 esttab lagiv lagpastdep ///
-	using "../../Output/Dta25 Output/Tables/raw/T3_lagged_main_regression.rtf", ///
+	using "../Output/Dta25 Output/Tables/raw/T3_lagged_main_regression.rtf", ///
     replace ///
     eform ///
     b(%9.3f) se(%9.3f) ///
@@ -323,7 +323,7 @@ mi estimate, cmdok eform post: mepoisson gds15 ///
 est sto mi_trail
 
 esttab mi_craft mi_rey mi_trail using ///
-	"../../Output/Dta25 Output/Tables/raw/TA4_supplementary_objective.rtf", ///
+	"../Output/Dta25 Output/Tables/raw/TA4_supplementary_objective.rtf", ///
     replace ///
     eform ///
     b(%9.3f) se(%9.3f) ///
@@ -352,7 +352,7 @@ mi estimate, cmdok eform post: xtpoisson gds15 ///
 est sto m2_mi_fe
 
 esttab m1_mi_fe m2_mi_fe using ///
-	"../../Output/Dta25 Output/Tables/raw/T4_fixed_effects.rtf", ///
+	"../Output/Dta25 Output/Tables/raw/T4_fixed_effects.rtf", ///
     replace eform ///
     b(%9.3f) se(%9.3f) ///
     star(* 0.05 ** 0.01 *** 0.001) ///
@@ -418,7 +418,7 @@ qui mi estimate, cmdok post dots: gsem ///
 	
 estimates store both_models_re
 esttab both_models_re both_models_re both_models_re both_models_re using ///
-	"../../Output/Dta25 Output/Tables/raw/T5_focal_mediation.rtf", replace ///
+	"../Output/Dta25 Output/Tables/raw/T5_focal_mediation.rtf", replace ///
     equation(1 2 3 4) ///
     mtitles("Model 1" "Model 2" "Model 3" "Model 4") ///
     eform b(3) se(3) ///
@@ -432,8 +432,8 @@ mimrgns, dydx(cci_tot_sd) post predict(equation(gds15)) /// no mediators (1)
 								predict(equation(gds15_copy1)) /// adds mastery (2)
 								predict(equation(gds15_copy2)) /// adds social (3)
 								predict(equation(gds15_copy3))
-estimates save "../../Output/Dta25 Output/Statistics/mimrgns_CCI_mediation", replace
-estimates use "../../Output/Dta25 Output/Statistics/mimrgns_CCI_mediation"
+estimates save "../Output/Dta25 Output/Statistics/mimrgns_CCI_mediation", replace
+estimates use "../Output/Dta25 Output/Statistics/mimrgns_CCI_mediation"
 estimates replay
 * mastery (p=0.013, 24.52%)
 mlincom 1 - 2, stat(est se p)
@@ -452,8 +452,8 @@ mimrgns, dydx(MCIdem_iadc) post predict(equation(gds15)) /// no mediators (1)
 								predict(equation(gds15_copy1)) /// adds mastery (2)
 								predict(equation(gds15_copy2)) /// adds social (3)
 								predict(equation(gds15_copy3))
-estimates save "../../Output/Dta25 Output/Statistics/mimrgns_diagnosis_mediation", replace
-estimates use "../../Output/Dta25 Output/Statistics/mimrgns_diagnosis_mediation"
+estimates save "../Output/Dta25 Output/Statistics/mimrgns_diagnosis_mediation", replace
+estimates use "../Output/Dta25 Output/Statistics/mimrgns_diagnosis_mediation"
 
 * mastery (p=0.926, 2.65%)
 mlincom 1 - 2, stat(est se p)
@@ -617,7 +617,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../../Output/Dta25 Output/Tables/raw/T6_CCI_diagnosis_interaction.rtf", write replace
+file open myfile using "../Output/Dta25 Output/Tables/raw/T6_CCI_diagnosis_interaction.rtf", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table 6: Diagnosis Marginal Effect on GDS-15 by CCI}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -682,7 +682,7 @@ marginsplot, ///
     graphregion(fcolor(white) lcolor(white) margin(medium)) ///
     plotregion(fcolor(white) lcolor(black)) ///
     xsize(5) ysize(4)
-graph export "../../Output/Dta25 Output/Figures/F5_CCI_diagnosis_interaction.tif", replace
+graph export "../Output/Dta25 Output/Figures/F5_CCI_diagnosis_interaction.tif", replace
 	
 
 **********************	
@@ -726,7 +726,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../../Output/Dta25 Output/Tables/raw/T8_CCI_informant_interaction.rtf", write replace
+file open myfile using "../Output/Dta25 Output/Tables/raw/T8_CCI_informant_interaction.rtf", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table: CCI Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -790,7 +790,7 @@ marginsplot, ///
     graphregion(fcolor(white) lcolor(white) margin(medium)) ///
     plotregion(fcolor(white) lcolor(black)) ///
     xsize(6) ysize(4)         
-graph export "../../Output/Dta25 Output/Figures/F7_CCI_informant_interaction.tif", replace
+graph export "../Output/Dta25 Output/Figures/F7_CCI_informant_interaction.tif", replace
 
 **********************	
 * Diagnosis x Informant (p=0.028)
@@ -832,7 +832,7 @@ local est3: di %5.3f r(est)
 local se3: di %5.3f r(se)
 local p3: di %5.3f r(p)
 local sig3 = cond(r(p)<0.001, "***", cond(r(p)<0.01, "**", cond(r(p)<0.05, "*", "")))
-file open myfile using "../../Output/Dta25 Output/Tables/raw/T7_diagnosis_informant_interaction.rtf", write replace
+file open myfile using "../Output/Dta25 Output/Tables/raw/T7_diagnosis_informant_interaction.rtf", write replace
 file write myfile "{\rtf1\ansi\deff0" _n
 file write myfile "{\b Table: Diagnosis Marginal Effect on GDS-15 by CCI Informant}\par\par" _n
 file write myfile "\trowd\trgaph100" _n
@@ -914,12 +914,12 @@ marginsplot, ///
     graphregion(fcolor(white) lcolor(white) margin(medium)) ///
     plotregion(fcolor(white) lcolor(black)) ///
     xsize(5) ysize(4)
-graph export "../../Output/Dta25 Output/Figures/F6_diagnosis_informant_interaction.tif", replace
+graph export "../Output/Dta25 Output/Figures/F6_diagnosis_informant_interaction.tif", replace
 
 **********************
 * Focal interactions table
 esttab m_int_diag m_int_inf_diag_rel m_int_inf_rel ///
-	using "../../Output/Dta25 Output/Tables/raw/TA10_interaction_regression.rtf", ///
+	using "../Output/Dta25 Output/Tables/raw/TA10_interaction_regression.rtf", ///
     replace ///
     eform ///
     b(%9.3f) se(%9.3f) ///
@@ -927,38 +927,6 @@ esttab m_int_diag m_int_inf_diag_rel m_int_inf_rel ///
     title("Table: Estimates From Multilevel Negative Binomial for GDS-15 (IRRs)") ///
     mtitles("Model 1" "Model 2" "Model 3") ///
     label
-
-********
-// Education interaction (not significant)
-
-use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
-
-drop if gds15 == .
-mi xtset id wave
-
-
-mi estimate, cmdok eform post: mepoisson gds15 ///
-	c.cci_tot_sd##c.grade_sd MCIdem_iadc cci_inftot_sd mocatots_sd ///
-    years_since0_sd age_base_sd female white faq_sd ///
-	bmi_sd i.married /// 
-    || id:, irr iterate(200) intpoints(12) 
-est sto edint_cci
-
-mi estimate, cmdok eform post dots: mepoisson gds15 ///
-	c.cci_tot_sd i.MCIdem_iadc##c.grade_sd cci_inftot_sd mocatots_sd ///
-    years_since0_sd age_base_sd female white faq_sd ///
-	bmi_sd i.married ///
-    || id:, irr iterate(200) intpoints(12) 
-est sto edint_diag
-	
-est restore edint_cci
-mimrgns, dydx(cci_tot_sd) at(grade_sd=(-1.5 1.5)) predict(mu) post
-mlincom 2 - 1, stat(est p se)
-
-est restore edint_diag
-mimrgns, dydx(MCIdem_iadc) at(grade_sd=(-1.5 1.5)) predict(mu) post
-mlincom 2 - 1, stat(est p se)
-
 
 	
 **# Bookmark #5
@@ -1075,7 +1043,7 @@ gen str20 label = string(coef, "%5.3f") + sig
 list
 
 * Export to CSV
-export delimited using "../../Output/Dta25 Output/Statistics/clpm_cci_coefs.csv", replace
+export delimited using "../Output/Dta25 Output/Statistics/clpm_cci_coefs.csv", replace
 
 * Get fully standardized cross-lagged paths
 use "../Dta25 Data/mi_iadc_dta25_recoded.dta", clear
@@ -1231,7 +1199,7 @@ gen str20 label = string(coef, "%5.3f") + sig
 list
 
 * Export to CSV
-export delimited using "../../Output/Stage 2 Output/Statistics/clpm_inf_coefs.csv", replace
+export delimited using "../Output/Stage 2 Output/Statistics/clpm_inf_coefs.csv", replace
 
 			
 ******************
@@ -1360,7 +1328,7 @@ gen str20 label = string(coef, "%5.3f") + sig
 list
 
 * Export to CSV
-export delimited using "../../Output/Dta25 Output/Statistics/clpm_diagnosis_coefs.csv", replace			
+export delimited using "../Output/Dta25 Output/Statistics/clpm_diagnosis_coefs.csv", replace			
 		
 
 ******************
@@ -1469,13 +1437,13 @@ gen str20 label = string(coef, "%5.3f") + sig
 list
 
 * Export to CSV
-export delimited using "../../Output/Dta25 Output/Statistics/clpm_moca_coefs.csv", replace		
+export delimited using "../Output/Dta25 Output/Statistics/clpm_moca_coefs.csv", replace		
 
 
 *****
 * Table
 
-esttab clpm_diag clpm_cci clpm_inf clpm_moca using "../../Output/Dta25 Output/Tables/raw/TA5_CLPM.rtf", ///
+esttab clpm_diag clpm_cci clpm_inf clpm_moca using "../Output/Dta25 Output/Tables/raw/TA5_CLPM.rtf", ///
     replace ///
     eform ///
     b(%9.3f) se(%9.3f) ///

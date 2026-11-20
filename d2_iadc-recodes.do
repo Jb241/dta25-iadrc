@@ -143,28 +143,12 @@ replace visitfreq = . if visitors_f==0 // 0 means no response/dk
 label define visitlbl 1 "Once yr or less" 2 "Several per yr" 3 "Several per month" 4 "Several per week" 5 "Almost every day"
 label val visitfreq visitlbl
 label var visitfreq "Receive visitors frequency"
-*reverse code
-gen visitfreq_rev = .
-replace visitfreq_rev = 1 if visitfreq == 5
-replace visitfreq_rev = 2 if visitfreq == 4
-replace visitfreq_rev = 3 if visitfreq == 3
-replace visitfreq_rev = 4 if visitfreq == 2
-replace visitfreq_rev = 5 if visitfreq == 1
-label var visitfreq_rev "Receive visitors frequency (most = 1, least = 5)"
 
 * Family/friend visit frequency
 gen famfreq = famfriends_f
 replace famfreq = . if famfriends_f==0 // 0 means no response/dk
 label val famfreq visitlbl
 label var famfreq "Visit family + friends frequency"
-* reverse code
-gen famfreq_rev = .
-replace famfreq_rev = 1 if famfreq == 5
-replace famfreq_rev = 2 if famfreq == 4
-replace famfreq_rev = 3 if famfreq == 3
-replace famfreq_rev = 4 if famfreq == 2
-replace famfreq_rev = 5 if famfreq == 1
-label var famfreq_rev "Visit family + friends frequency (most = 1, least = 5)"
 
 * Mastery
 tab mastery1
@@ -330,8 +314,8 @@ foreach var in `varlist' {
 }
 
 * Unstandardized ones
-local varlist2 famfreq_rev gds15 married mastery1 mastery2 ///
-	MCIdem_iadc memwors_bi relsubj_simple visitfreq_rev yrs_since_last pastdep
+local varlist2 famfreq gds15 married mastery1 mastery2 ///
+	MCIdem_iadc memwors_bi relsubj_simple visitfreq yrs_since_last pastdep
 foreach var in `varlist2' {
 	gen L_`var' = L.`var'
 }
@@ -342,7 +326,7 @@ foreach var in `varlist2' {
 *
 misstable summarize gds15 MCIdem_iadc cci_tot_sd cci_inftot_sd mocatots_sd ///
 	years_since0_sd age_base_sd faq_sd female white grade_sd married ///
-	relsubj_simple mastery1 mastery2 visitfreq_rev famfreq_rev  ///
+	relsubj_simple mastery1 mastery2 visitfreq famfreq  ///
 	yrs_since_last bmi_sd pastdep
 drop if female == .
 misstable summarize	years_since0_sd age_base_sd female grade_sd MCIdem_iadc
